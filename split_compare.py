@@ -79,9 +79,12 @@ def paired_regressions(report, names, maximum_regression):
             "candidate_over_baseline": candidate / previous,
             "all_passes_candidate_over_baseline": candidate_all / previous_all,
             "per_pass": per_pass,
-            "maximum_regression_fraction": maximum_regression,
-            "within_limit": candidate / previous <= 1 + maximum_regression and candidate_all / previous_all <= 1 + maximum_regression,
         }
+        if maximum_regression is not None:
+            pairs[engine].update({
+                "maximum_regression_fraction": maximum_regression,
+                "within_limit": candidate / previous <= 1 + maximum_regression and candidate_all / previous_all <= 1 + maximum_regression,
+            })
     return pairs
 
 
@@ -101,6 +104,7 @@ def run_split(arguments):
     raw.mkdir()
     report = {
         "schema_version": 1, "kind": "split-performance", "complete": False,
+        "comparison_kind": arguments.comparison,
         "created_utc": datetime.now(timezone.utc).isoformat(), "workers": scrapers,
         "config_sha256": sha256(arguments.config),
         "controller_sha256": {name: sha256(ROOT / name) for name in ("split_compare.py", "compare.py", "benchmark.py", "evaluate.py", "prepare.py")},
@@ -108,7 +112,7 @@ def run_split(arguments):
         "selection": {"pages": len(records), "seed": arguments.seed, "limit_per_corpus": arguments.limit_per_corpus, "split": "dev"},
         "timing_scope": {
             "parse": "Native wall time for in-memory charset decoding and one shared HTML parse, after the entire file read has completed.",
-            "extraction": "Native wall time for one engine including required working copies/conversions, extraction, native metadata, plain-text rendering and destruction of temporary article trees. Trafilatura fallback is always off.",
+            "extraction": "Native wall time for one engine including required working copies/conversions, extraction, native metadata and plain-text rendering. Rust drops temporary article trees before its timer stops; Go uses normal garbage collection, not forced per-call collection. Trafilatura fallback is always off.",
             "excluded": "File opening/reading, worker startup, request decoding, IPC, response JSON serialization, controller validation and quality scoring.",
         },
         "environment": {"platform": platform.platform(), "processor": platform.processor(), "logical_cpus": library.cpu_count(), "power_before": power_status(library)},
@@ -190,7 +194,8 @@ def run_split(arguments):
         report["overall"] = stage_summary(report["runs"], names, selected)
         report["all_passes"] = stage_summary(report["runs"], names, list(range(1, arguments.runs + 1)))
         if len(names) == 2:
-            report["paired_extraction"] = paired_regressions(report, names, arguments.maximum_regression)
+            maximum_regression = arguments.maximum_regression if arguments.comparison == "releases" else None
+            report["paired_extraction"] = paired_regressions(report, names, maximum_regression)
         report["audit"] = {"passed": True, "observations": observations, "timed_observations": len(records) * len(names) * arguments.runs, "timings_per_observation": 4, "warmup_passes": arguments.warmups, "timed_passes": arguments.runs, "observations_sha256": observation_hash.hexdigest(), "scope": "Every input checksum, response ID, engine order, four timers, complete pass, repeated scored prediction and executable identity checked; quality scores recomputed. All pass totals retained."}
         report["complete"] = True
         report["environment"]["power_after"] = power_status(library)
@@ -218,6 +223,7 @@ def main():
     parser.add_argument("--best-passes", type=int, default=2)
     parser.add_argument("--seed", type=int, default=20260921)
     parser.add_argument("--timeout", type=float, default=600)
+    parser.add_argument("--comparison", choices=("releases", "languages"), default="releases", help="Apply a regression gate only to an old/new release comparison")
     parser.add_argument("--maximum-regression", type=float, default=0.05)
     parser.add_argument("--limit-per-corpus", type=int)
     parser.add_argument("--keep-awake", action=argparse.BooleanOptionalAction, default=os.name == "nt")

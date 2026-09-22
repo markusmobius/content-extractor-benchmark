@@ -62,7 +62,7 @@ def snapshot(entry, directory, git):
     return source, {"repository": entry["repository"], "tag": entry["tag"], "commit": commit, "files": hashes, "sha256": hashlib.sha256(json.dumps(hashes, sort_keys=True).encode()).hexdigest()}
 
 
-def build_go(entry, source, directory, binary, arguments, environment):
+def build_go(entry, source, directory, binary, arguments, environment, adapter_source=None):
     environment = {**environment, **RUNTIME, "GOWORK": "off", "CGO_ENABLED": "0", "GOTOOLCHAIN": arguments.go_toolchain, "GOAMD64": "v1", "GOFLAGS": "", "GOEXPERIMENT": ""}
     host = json.loads(command_output([arguments.go, "env", "-json", "GOHOSTOS", "GOHOSTARCH"], environment))
     environment.update({"GOOS": host["GOHOSTOS"], "GOARCH": host["GOHOSTARCH"]})
@@ -75,7 +75,7 @@ def build_go(entry, source, directory, binary, arguments, environment):
     if len(main) != 1 or main[0]["Path"] != entry["module"] or any(module.get("Replace") for module in modules):
         raise ValueError(f"{entry['name']}: unexpected module identity or dependency replacements")
     adapter = directory / "adapter.go"
-    adapter.write_bytes(go_adapter(entry))
+    adapter.write_bytes(adapter_source.read_bytes() if adapter_source else go_adapter(entry))
     command = [arguments.go, "-C", str(source), "build", "-mod=readonly", "-trimpath", "-pgo=off", "-buildvcs=false", "-o", str(binary), str(adapter)]
     print(f"Compiling {entry['name']}", flush=True)
     subprocess.run(command, env=environment, check=True)

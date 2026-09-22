@@ -22,11 +22,49 @@ from test_benchmark import fixture
 from tools.build_go_trafilatura import archive_source, json_objects
 from tools.build_releases import go_adapter, load_suite
 from tools.build_split_rust import source_configuration
+from tools.build_split_suite import GO_RELEASES, RUST_RELEASES, go_engine_identities, validate_rust_receipt
 from tools.publish_results import audit_run, publish_results, select_best_passes
 from split_compare import decode_response, paired_regressions, stage_summary
 
 
 class ComparisonTests(unittest.TestCase):
+    def test_split_go_dependencies_require_exact_release_commits(self):
+        entries = load_suite(Path(__file__).parent / "release-suite.json", GO_RELEASES)
+        with tempfile.TemporaryDirectory() as temporary:
+            modules = []
+            for entry in entries:
+                if entry["engine"] == "trafilatura":
+                    modules.append({"Path": entry["module"], "Main": True})
+                    continue
+                module_file = Path(temporary) / (entry["name"] + ".mod")
+                version = "v0.0.0-20240926050704-25b8d046ffb4" if entry["engine"] == "domdistiller" else entry["tag"]
+                module_file.with_suffix(".info").write_text(json.dumps({"Version": version, "Origin": {"URL": entry["repository"], "Hash": entry["commit"]}}), encoding="utf-8")
+                modules.append({"Path": entry["module"], "Version": version, "GoMod": str(module_file), "Sum": "h1:module", "GoModSum": "h1:manifest"})
+            identities = go_engine_identities(modules, entries)
+            self.assertEqual(set(identities), {"readability", "domdistiller", "trafilatura"})
+            self.assertEqual(identities["domdistiller"]["tag"], "v1.0.0")
+            self.assertTrue(identities["domdistiller"]["resolved_module_version"].endswith("25b8d046ffb4"))
+            altered = [{**entry, "commit": "0" * 40} if entry["engine"] == "domdistiller" else entry for entry in entries]
+            with self.assertRaisesRegex(ValueError, "differs from the pinned release"):
+                go_engine_identities(modules, altered)
+
+    def test_split_rust_worker_requires_released_locked_dependencies(self):
+        receipt = {"versions": {name: release["version"] for name, release in RUST_RELEASES.items()},
+                   "sources": {"rust-trafilatura": {"commit": RUST_RELEASES["rust-trafilatura"]["commit"], "reference": "v2.2.3"}},
+                   "cargo_metadata": {"packages": [
+                       {"name": name, "version": release["version"], "source": None if name == "rust-trafilatura" else
+                        f"git+https://github.com/markusmobius/{release['repository']}?tag=v{release['version']}#{release['commit']}"}
+                       for name, release in RUST_RELEASES.items()]}}
+        validate_rust_receipt(receipt)
+        for name in RUST_RELEASES:
+            altered = json.loads(json.dumps(receipt))
+            altered["versions"][name] = "0.0.0"
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, "suite releases"):
+                validate_rust_receipt(altered)
+        receipt["cargo_metadata"]["packages"][0]["source"] = None
+        with self.assertRaisesRegex(ValueError, "differs from the pinned release"):
+            validate_rust_receipt(receipt)
+
     def test_split_worktree_build_uses_local_sources_after_release_pinning(self):
         directory = Path("candidate sources").resolve()
         dependencies = {
@@ -75,6 +113,10 @@ class ComparisonTests(unittest.TestCase):
         self.assertFalse(regression["readability"]["within_limit"])
         self.assertAlmostEqual(regression["trafilatura"]["candidate_over_baseline"], 1.06)
         self.assertEqual(len(regression["domdistiller"]["per_pass"]), 4)
+        comparison = paired_regressions(report, ["rust", "candidate"], None)
+        self.assertAlmostEqual(comparison["trafilatura"]["candidate_over_baseline"], 1.06)
+        self.assertNotIn("within_limit", comparison["trafilatura"])
+        self.assertNotIn("maximum_regression_fraction", comparison["trafilatura"])
 
     def test_best_passes_are_shared_complete_and_leave_all_totals_intact(self):
         names = ["first", "second"]

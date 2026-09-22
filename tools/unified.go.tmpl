@@ -1,0 +1,185 @@
+package main
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/url"
+	"os"
+	"strings"
+	"time"
+
+	"github.com/go-shiori/dom"
+	distiller "github.com/markusmobius/go-domdistiller"
+	readability "github.com/markusmobius/go-readabilityV2"
+	trafilatura "github.com/markusmobius/go-trafilatura/v2"
+	"golang.org/x/net/html"
+)
+
+type request struct {
+	ID          string   `json:"id"`
+	URL         string   `json:"url"`
+	HTMLPath    string   `json:"html_path"`
+	EngineOrder []string `json:"engine_order"`
+}
+
+type metadata struct {
+	Title    string   `json:"title"`
+	Authors  []string `json:"authors"`
+	Date     string   `json:"date"`
+	Language string   `json:"language"`
+}
+
+type prediction struct {
+	Text     string   `json:"text"`
+	Comments string   `json:"comments"`
+	Metadata metadata `json:"metadata"`
+	Error    string   `json:"error,omitempty"`
+}
+
+type response struct {
+	ID          string                `json:"id"`
+	EngineOrder []string              `json:"engine_order"`
+	Seconds     map[string]float64    `json:"seconds"`
+	Predictions map[string]prediction `json:"predictions"`
+	Error       string                `json:"error,omitempty"`
+}
+
+func extractReadability(document *html.Node, pageURL string) prediction {
+	var output prediction
+	originalURL, _ := url.ParseRequestURI(pageURL)
+	parser := readability.NewParser()
+	article, err := parser.ParseDocument(document, originalURL)
+	if err != nil {
+		output.Error = err.Error()
+		return output
+	}
+	var text strings.Builder
+	if err := article.RenderText(&text); err != nil {
+		output.Error = err.Error()
+		return output
+	}
+	output.Text = text.String()
+	output.Metadata.Title = article.Title()
+	output.Metadata.Language = article.Language()
+	if byline := strings.TrimSpace(article.Byline()); byline != "" {
+		output.Metadata.Authors = []string{byline}
+	}
+	if published, err := article.PublishedTime(); err == nil {
+		output.Metadata.Date = published.Format("2006-01-02")
+	}
+	return output
+}
+
+func extractDistiller(document *html.Node, pageURL string) prediction {
+	var output prediction
+	originalURL, _ := url.ParseRequestURI(pageURL)
+	result, err := distiller.Apply(dom.Clone(document, true), &distiller.Options{
+		OriginalURL: originalURL, SkipPagination: true,
+	})
+	if err != nil {
+		output.Error = err.Error()
+		return output
+	}
+	output.Text = result.Text
+	output.Metadata.Title = result.Title
+	return output
+}
+
+func extractTrafilatura(document *html.Node, pageURL string) prediction {
+	var output prediction
+	originalURL, _ := url.ParseRequestURI(pageURL)
+	result, err := trafilatura.ExtractDocument(document, trafilatura.Options{
+		OriginalURL: originalURL, EnableFallback: false, FallbackCandidates: nil,
+		ExcludeComments: true, ExcludeTables: false, Focus: trafilatura.Balanced,
+	})
+	if err != nil {
+		output.Error = err.Error()
+		return output
+	}
+	output.Text = result.ContentText
+	output.Comments = result.CommentsText
+	output.Metadata.Title = result.Metadata.Title
+	output.Metadata.Language = result.Metadata.Language
+	for _, author := range strings.Split(result.Metadata.Author, ";") {
+		if author = strings.TrimSpace(author); author != "" {
+			output.Metadata.Authors = append(output.Metadata.Authors, author)
+		}
+	}
+	if !result.Metadata.Date.IsZero() {
+		output.Metadata.Date = result.Metadata.Date.Format("2006-01-02")
+	}
+	return output
+}
+
+func extractShared(document *html.Node, pageURL, engine string) prediction {
+	switch engine {
+	case "readability":
+		return extractReadability(document, pageURL)
+	case "domdistiller":
+		return extractDistiller(document, pageURL)
+	case "trafilatura":
+		return extractTrafilatura(document, pageURL)
+	default:
+		panic("invalid engine")
+	}
+}
+
+func process(input request) response {
+	output := response{ID: input.ID, EngineOrder: input.EngineOrder,
+		Seconds: make(map[string]float64, 4), Predictions: make(map[string]prediction, 3)}
+	content, err := os.ReadFile(input.HTMLPath)
+	if err != nil {
+		output.Error = err.Error()
+		return output
+	}
+	started := time.Now()
+	document, err := dom.Parse(bytes.NewReader(content))
+	output.Seconds["parse"] = time.Since(started).Seconds()
+	if err != nil {
+		output.Error = err.Error()
+		return output
+	}
+	for _, engine := range input.EngineOrder {
+		started := time.Now()
+		result := extractShared(document, input.URL, engine)
+		output.Seconds[engine] = time.Since(started).Seconds()
+		output.Predictions[engine] = result
+	}
+	return output
+}
+
+func run(input io.Reader, output io.Writer) error {
+	decoder := json.NewDecoder(input)
+	encoder := json.NewEncoder(output)
+	for {
+		var item request
+		if err := decoder.Decode(&item); err == io.EOF {
+			return nil
+		} else if err != nil {
+			return err
+		}
+		seen := make(map[string]bool, 3)
+		for _, engine := range item.EngineOrder {
+			if seen[engine] || (engine != "readability" && engine != "domdistiller" && engine != "trafilatura") {
+				return fmt.Errorf("engine_order requires every engine exactly once")
+			}
+			seen[engine] = true
+		}
+		if item.ID == "" || item.HTMLPath == "" || len(seen) != 3 {
+			return fmt.Errorf("request requires id, html_path and all three engines")
+		}
+		if err := encoder.Encode(process(item)); err != nil {
+			return err
+		}
+	}
+}
+
+func main() {
+	time.Local = time.UTC
+	if err := run(os.Stdin, os.Stdout); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}

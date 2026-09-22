@@ -1,0 +1,103 @@
+package main
+
+import (
+	"bytes"
+	"encoding/json"
+	"math"
+	"os"
+	"path/filepath"
+	"reflect"
+	"strings"
+	"testing"
+
+	"github.com/go-shiori/dom"
+	"golang.org/x/net/html"
+)
+
+func TestSharedInputAllEngineOrders(test *testing.T) {
+	sources := []string{
+		"<html lang='en'><title>Shared article</title><meta name='author' content='A Writer'><article><h1>Shared article</h1><p>" + strings.Repeat("An article with details, evidence, and useful context. ", 40) + "</p></article></html>",
+		"<title>Short</title><svg><title>Image</title></svg><template><p>Hidden</p></template><article><p>Short article <b>one<i>two</b>three</article>",
+		"<meta charset='windows-1252'><title>Article</title><article><p>" + strings.Repeat("The caf\xe9 published a detailed report, including context. ", 40) + "</p></article>",
+	}
+	orders := [][]string{
+		{"readability", "domdistiller", "trafilatura"}, {"readability", "trafilatura", "domdistiller"},
+		{"domdistiller", "readability", "trafilatura"}, {"domdistiller", "trafilatura", "readability"},
+		{"trafilatura", "readability", "domdistiller"}, {"trafilatura", "domdistiller", "readability"},
+	}
+	for _, source := range sources {
+		document, err := dom.Parse(strings.NewReader(source))
+		if err != nil {
+			test.Fatal(err)
+		}
+		var original bytes.Buffer
+		if err := html.Render(&original, document); err != nil {
+			test.Fatal(err)
+		}
+		reference := make(map[string]prediction)
+		for repeat, order := range orders {
+			for _, engine := range order {
+				output := extractShared(document, "https://example.org/article", engine)
+				if repeat == 0 {
+					reference[engine] = output
+				} else if !reflect.DeepEqual(output, reference[engine]) {
+					test.Fatalf("order changed %s output", engine)
+				}
+				var after bytes.Buffer
+				if err := html.Render(&after, document); err != nil {
+					test.Fatal(err)
+				}
+				if after.String() != original.String() {
+					test.Fatalf("%s mutated shared input", engine)
+				}
+			}
+		}
+	}
+}
+
+func TestSplitProtocol(test *testing.T) {
+	path := filepath.Join(test.TempDir(), "article.html")
+	if err := os.WriteFile(path, []byte("<title>Article</title><article><p>"+strings.Repeat("An article with useful details and context. ", 40)+"</p></article>"), 0600); err != nil {
+		test.Fatal(err)
+	}
+	item := request{ID: "page", HTMLPath: path, URL: "https://example.org/", EngineOrder: []string{"trafilatura", "readability", "domdistiller"}}
+	var input, output bytes.Buffer
+	encoder := json.NewEncoder(&input)
+	for repeat := 0; repeat < 2; repeat++ {
+		if err := encoder.Encode(item); err != nil {
+			test.Fatal(err)
+		}
+	}
+	if err := run(&input, &output); err != nil {
+		test.Fatal(err)
+	}
+	if bytes.Count(output.Bytes(), []byte("\n")) != 2 {
+		test.Fatal("expected two newline-ended responses")
+	}
+	decoder := json.NewDecoder(&output)
+	for repeat := 0; repeat < 2; repeat++ {
+		var result response
+		if err := decoder.Decode(&result); err != nil {
+			test.Fatal(err)
+		}
+		if result.Error != "" || result.ID != item.ID || !reflect.DeepEqual(result.EngineOrder, item.EngineOrder) || len(result.Seconds) != 4 || len(result.Predictions) != 3 {
+			test.Fatalf("invalid split response: %+v", result)
+		}
+		for _, stage := range append([]string{"parse"}, item.EngineOrder...) {
+			seconds, exists := result.Seconds[stage]
+			if !exists || seconds < 0 || math.IsNaN(seconds) || math.IsInf(seconds, 0) {
+				test.Fatalf("invalid %s timing: %v", stage, seconds)
+			}
+		}
+	}
+	for _, order := range [][]string{{"readability"}, {"readability", "readability", "trafilatura"}, {"readability", "domdistiller", "unknown"}} {
+		item.EngineOrder = order
+		input.Reset()
+		if err := json.NewEncoder(&input).Encode(item); err != nil {
+			test.Fatal(err)
+		}
+		if err := run(&input, &output); err == nil {
+			test.Fatal("invalid engine order was accepted")
+		}
+	}
+}
