@@ -1,0 +1,234 @@
+use rust_trafilatura::{rust_readability as readability, Error};
+use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
+use std::io::{self, BufRead, Write};
+use std::time::Instant;
+
+mod input_encoding;
+
+#[cfg(feature = "mimalloc")]
+#[global_allocator]
+static ALLOCATOR: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
+#[cfg(feature = "benchmark-shared-input")]
+use rust_trafilatura::{parse_shared_html as parse_input, SharedDocument as Input};
+
+#[cfg(not(feature = "benchmark-shared-input"))]
+mod previous {
+    use super::readability;
+    use readability::HtmlTreeSink;
+    use rust_domdistiller::dom::{Attribute, Document, Kind, Node, NodeId};
+
+    pub struct Input {
+        document: Document,
+        namespaces: Vec<String>,
+    }
+
+    impl Input {
+        pub fn document(&self) -> &Document {
+            &self.document
+        }
+
+        pub fn readability_dom(&self) -> readability::Dom {
+            let nodes = self.document.nodes.iter().map(|source| {
+                let mut node = readability::Node::new(match source.kind {
+                    Kind::Document => readability::Kind::Document,
+                    Kind::Element => readability::Kind::Element,
+                    Kind::Text => readability::Kind::Text,
+                    Kind::Comment => readability::Kind::Comment,
+                    Kind::Doctype => readability::Kind::Doctype,
+                });
+                node.tag = source.tag.as_str().into();
+                node.data = source.data.as_str().into();
+                node.parent = source.parent;
+                node.children.extend_from_slice(&source.children);
+                node.attrs = source.attrs.iter().map(|attribute| readability::Attribute {
+                    namespace: attribute.namespace.as_str().into(),
+                    key: attribute.key.as_str().into(),
+                    value: attribute.value.as_str().into(),
+                }).collect();
+                node
+            }).collect();
+            let mut document = readability::Dom::new(readability::Document { nodes });
+            document.namespaces = self.namespaces.iter().map(|namespace| namespace.as_str().into()).collect();
+            document
+        }
+    }
+
+    impl HtmlTreeSink for Input {
+        type Handle = NodeId;
+
+        fn append_node(&mut self, parent: Option<NodeId>, kind: readability::Kind, tag: &str, namespace: &str, data: &str) -> NodeId {
+            let index = self.document.nodes.len();
+            self.document.nodes.push(Node {
+                kind: match kind {
+                    readability::Kind::Document => Kind::Document,
+                    readability::Kind::Element => Kind::Element,
+                    readability::Kind::Text => Kind::Text,
+                    readability::Kind::Comment => Kind::Comment,
+                    readability::Kind::Doctype => Kind::Doctype,
+                },
+                tag: tag.into(), data: data.into(), attrs: Vec::new(), parent, children: Vec::new(),
+            });
+            self.namespaces.push(namespace.into());
+            if let Some(parent) = parent {
+                self.document.nodes[parent].children.push(index);
+            }
+            index
+        }
+
+        fn append_attribute(&mut self, node: NodeId, namespace: &str, key: &str, value: &str) {
+            self.document.nodes[node].attrs.push(Attribute { namespace: namespace.into(), key: key.into(), value: value.into() });
+        }
+    }
+
+    pub fn parse_input(source: &str) -> Input {
+        let mut output = Input { document: Document { nodes: Vec::new() }, namespaces: Vec::new() };
+        readability::parse_html_into(source, &mut output);
+        output
+    }
+}
+
+#[cfg(not(feature = "benchmark-shared-input"))]
+use previous::{parse_input, Input};
+
+#[derive(Deserialize)]
+struct Request {
+    id: String,
+    html_path: String,
+    url: String,
+    engine_order: Vec<String>,
+}
+
+#[derive(Default, Serialize)]
+struct Metadata {
+    title: String,
+    authors: Option<Vec<String>>,
+    date: String,
+    language: String,
+}
+
+#[derive(Default, Serialize)]
+struct Prediction {
+    text: String,
+    comments: String,
+    metadata: Metadata,
+    #[serde(skip_serializing_if = "String::is_empty")]
+    error: String,
+}
+
+#[derive(Serialize)]
+struct Response {
+    id: String,
+    engine_order: Vec<String>,
+    seconds: BTreeMap<String, f64>,
+    predictions: BTreeMap<String, Prediction>,
+    #[serde(skip_serializing_if = "String::is_empty")]
+    error: String,
+}
+
+fn extract_readability(document: &Input, url: &str) -> Prediction {
+    let mut output = Prediction::default();
+    let url = readability::Url::request(url);
+    #[cfg(feature = "benchmark-shared-input")]
+    let article = readability::Parser::new().parse_shared_document(document, url.as_ref());
+    #[cfg(not(feature = "benchmark-shared-input"))]
+    let article = readability::Parser::new().parse_dom(&document.readability_dom(), url.as_ref());
+    let result = article.and_then(|article| article.text().map(|text| (article, text)));
+    match result {
+        Ok((article, text)) => {
+            output.text = text;
+            output.metadata.title = article.title().into();
+            output.metadata.language = article.language().into();
+            if !article.byline().trim().is_empty() {
+                output.metadata.authors = Some(vec![article.byline().trim().into()]);
+            }
+            output.metadata.date = article.published_time_with_local_timezone(&readability::LocalTimeZone::utc()).ok().and_then(|timestamp| {
+                let date = chrono::DateTime::from_timestamp(timestamp.seconds, timestamp.nanoseconds)?;
+                let zone = chrono::FixedOffset::east_opt(timestamp.offset)?;
+                Some(date.with_timezone(&zone).format("%Y-%m-%d").to_string())
+            }).unwrap_or_default();
+        }
+        Err(error) => output.error = error.to_string(),
+    }
+    output
+}
+
+fn extract_distiller(document: &Input, url: &str) -> Prediction {
+    let mut output = Prediction::default();
+    let options = rust_domdistiller::Options { original_url: (!url.is_empty()).then(|| url.into()), skip_pagination: true, ..Default::default() };
+    match rust_domdistiller::apply(document.document(), &options) {
+        Ok(result) => {
+            output.text = result.text;
+            output.metadata.title = result.title;
+        }
+        Err(error) => output.error = error.to_string(),
+    }
+    output
+}
+
+fn extract_trafilatura(document: &Input, url: &str) -> Prediction {
+    let mut output = Prediction::default();
+    let options = rust_trafilatura::Options {
+        original_url: readability::Url::request(url), enable_fallback: false,
+        fallback_candidates: None, exclude_comments: true, ..Default::default()
+    };
+    match rust_trafilatura::extract_document(document.document(), &options) {
+        Ok(result) => {
+            output.text = result.content_text;
+            output.comments = result.comments_text;
+            output.metadata.title = result.metadata.title;
+            output.metadata.language = result.metadata.language;
+            let authors: Vec<_> = result.metadata.author.split(';').map(str::trim).filter(|name| !name.is_empty()).map(String::from).collect();
+            output.metadata.authors = (!authors.is_empty()).then_some(authors);
+            if result.metadata.date != rust_trafilatura::Metadata::default().date {
+                output.metadata.date = result.metadata.date.format("%Y-%m-%d").to_string();
+            }
+        }
+        Err(error) => output.error = error.to_string(),
+    }
+    output
+}
+
+fn process(request: Request) -> Response {
+    let mut response = Response { id: request.id, engine_order: request.engine_order, seconds: BTreeMap::new(), predictions: BTreeMap::new(), error: String::new() };
+    let bytes = match std::fs::read(&request.html_path) {
+        Ok(bytes) => bytes,
+        Err(error) => { response.error = error.to_string(); return response; }
+    };
+    let started = Instant::now();
+    let document = input_encoding::decode(&bytes).map(|source| parse_input(&source));
+    response.seconds.insert("parse".into(), started.elapsed().as_secs_f64());
+    let document = match document {
+        Ok(document) => document,
+        Err(error) => { response.error = error.to_string(); return response; }
+    };
+    for engine in &response.engine_order {
+        let started = Instant::now();
+        let output = match engine.as_str() {
+            "readability" => extract_readability(&document, &request.url),
+            "domdistiller" => extract_distiller(&document, &request.url),
+            "trafilatura" => extract_trafilatura(&document, &request.url),
+            _ => unreachable!(),
+        };
+        response.seconds.insert(engine.clone(), started.elapsed().as_secs_f64());
+        response.predictions.insert(engine.clone(), output);
+    }
+    response
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut output = io::BufWriter::new(io::stdout().lock());
+    for line in io::stdin().lock().lines() {
+        let request: Request = serde_json::from_str(&line?)?;
+        let mut order = request.engine_order.clone();
+        order.sort();
+        if request.id.is_empty() || request.html_path.is_empty() || order != ["domdistiller", "readability", "trafilatura"] {
+            return Err("Request requires id, html_path, and each of the three engines exactly once".into());
+        }
+        serde_json::to_writer(&mut output, &process(request))?;
+        writeln!(output)?;
+        output.flush()?;
+    }
+    Ok(())
+}

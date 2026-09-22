@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import tarfile
+import tomllib
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
@@ -20,10 +21,61 @@ from run_benchmark import check_sleep_events, parse_arguments as benchmark_argum
 from test_benchmark import fixture
 from tools.build_go_trafilatura import archive_source, json_objects
 from tools.build_releases import go_adapter, load_suite
+from tools.build_split_rust import source_configuration
 from tools.publish_results import audit_run, publish_results, select_best_passes
+from split_compare import decode_response, paired_regressions, stage_summary
 
 
 class ComparisonTests(unittest.TestCase):
+    def test_split_worktree_build_uses_local_sources_after_release_pinning(self):
+        directory = Path("candidate sources").resolve()
+        dependencies = {
+            "rust-readability-v2": {"git": "https://github.com/markusmobius/rust-readability", "tag": "v0.6.2"},
+            "rust-domdistiller": {"git": "https://github.com/markusmobius/rust-domdistiller", "tag": "v1.0.1"},
+        }
+        configuration = source_configuration({"dependencies": dependencies}, directory)
+        parsed = tomllib.loads("\n".join(configuration[1::2]))["patch"]
+        for package, repository in (("rust-readability-v2", "rust-readability"), ("rust-domdistiller", "rust-domdistiller")):
+            self.assertEqual(parsed[dependencies[package]["git"]][package]["path"], str(directory / repository))
+            dependencies[package] = {"path": f"../{repository}"}
+        self.assertEqual(source_configuration({"dependencies": dependencies}, directory), [])
+        dependencies["rust-readability-v2"] = {"version": "=0.6.2"}
+        with self.assertRaisesRegex(ValueError, "sibling path or Git"):
+            source_configuration({"dependencies": dependencies}, directory)
+
+    def test_split_timings_require_all_stages_and_requested_order(self):
+        record = fixture("legonews/page", "legonews", "standard")
+        order = ["trafilatura", "readability", "domdistiller"]
+        response = {
+            "id": record["id"], "engine_order": order,
+            "seconds": {"parse": 0.4, "readability": 0.1, "domdistiller": 0.2, "trafilatura": 0.3},
+            "predictions": {name: {"text": "article", "metadata": {}} for name in order},
+        }
+        timings, predictions = decode_response(json.dumps(response).encode(), record, order)
+        self.assertEqual(timings["parse"], 0.4)
+        self.assertEqual(set(predictions), set(order))
+        for altered in ({**response, "engine_order": list(reversed(order))},
+                        {**response, "seconds": {"parse": 0.4}},
+                        {**response, "seconds": {**response["seconds"], "parse": float("nan")}},
+                        {**response, "error": "read failed"}):
+            with self.subTest(altered=altered), self.assertRaises(ValueError):
+                decode_response(json.dumps(altered).encode(), record, order)
+        runs = [{"phase": "speed", "worker": "rust", "stage": stage, "round": repeat,
+                 "pages": 2, "elapsed_seconds": value * repeat}
+                for stage, value in timings.items() for repeat in (1, 2, 3, 4)]
+        result = stage_summary(runs, ["rust"], [1, 2])["rust"]
+        self.assertAlmostEqual(result["parse"]["mean_ms_per_page"], 300)
+        self.assertAlmostEqual(result["readability"]["mean_ms_per_page"], 75)
+        self.assertEqual(result["trafilatura"]["page_observations"], 4)
+        paired = runs + [{**sample, "worker": "candidate", "elapsed_seconds": sample["elapsed_seconds"] * 1.06} for sample in runs]
+        report = {"runs": paired, "overall": stage_summary(paired, ["rust", "candidate"], [1, 2]),
+              "all_passes": stage_summary(paired, ["rust", "candidate"], [1, 2, 3, 4]),
+              "pass_selection": {"measured_passes": 4}}
+        regression = paired_regressions(report, ["rust", "candidate"], 0.05)
+        self.assertFalse(regression["readability"]["within_limit"])
+        self.assertAlmostEqual(regression["trafilatura"]["candidate_over_baseline"], 1.06)
+        self.assertEqual(len(regression["domdistiller"]["per_pass"]), 4)
+
     def test_best_passes_are_shared_complete_and_leave_all_totals_intact(self):
         names = ["first", "second"]
         workloads = {"legonews": {"pages": 2}, "wcxb": {"pages": 1}}

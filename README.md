@@ -75,6 +75,34 @@ Pages/second is 1,000 divided by the unrounded mean milliseconds/page. These are
 
 The host was Windows 11 on an AMD Ryzen AI 7 PRO 350, using Go 1.27.1 and Rust 1.98.1 with the Windows GNU toolchain. Both summary files carry the same comparison hash, pinned source/build identities, and input selection. Raw predictions and page timing logs are not retained. Nothing from separate runs is pooled.
 
+### Shared-Input Rust Qualification
+
+[rust_shared_performance_2026_09_21.json](rust_shared_performance_2026_09_21.json) records a separate Rust-only paired comparison of Readability 0.6.1 / 0.6.2, DomDistiller 1.0.0 / 1.0.1, and Trafilatura 2.2.2 / 2.2.3. Each persistent worker contains all three engines and parses each page once. These native stage timings are **not comparable to the request-latency table above**.
+
+| Suite | Engine | Shared Parse ms/page | Extraction ms/page |
+| --- | --- | ---: | ---: |
+| Previous | Readability 0.6.1 | 4.678 | 3.540 |
+| Candidate | Readability 0.6.2 | 4.697 | 3.553 |
+| Previous | DomDistiller 1.0.0 | 4.678 | 2.920 |
+| Candidate | DomDistiller 1.0.1 | 4.697 | 2.917 |
+| Previous | Trafilatura 2.2.2 | 4.678 | 5.824 |
+| Candidate | Trafilatura 2.2.3 | 4.697 | 5.838 |
+
+The parse column is one shared cost per worker/page, not an additional parse for every engine. It includes in-memory decoding and HTML parsing **after the entire file read completes**. Extraction includes working-tree copies/conversions, native metadata, text rendering and temporary-tree destruction; it excludes file reads, parsing, startup, IPC, JSON serialization and controller scoring. Trafilatura fallback is disabled, with no supplied fallback candidates; comments and DomDistiller pagination are also disabled. No DOM or extraction result is reused across requests.
+
+All 2,659 development pages ran through one full warmup and four measured passes, with matching scored text/metadata/error outputs for every old/new engine pair. Both workers remain alive; worker order is randomized and exactly first/second balanced over four passes for each page. Each pair receives the same randomized engine order. Three engines require six passes for complete per-page position balance, so four is a partial block. Both suites use Rust 1.98.1 Windows GNU, ThinLTO and mimalloc on the same host described above. This compares coordinated library suites, not isolated algorithm changes.
+
+The table uses the same best two complete passes (2 and 3), ranked by summed extraction time across both suites and all three engines. Extraction-time changes are Readability **+0.37%**, DomDistiller **-0.11%**, and Trafilatura **+0.24%**; all-four-pass changes are **+0.78%**, **+0.43%**, and **+0.25%**, respectively. All pass the predeclared 5% regression limit on both means. No sleep events were recorded. Source/build receipts, all pass totals, per-pass ratios, separate quality scores and the 26,590-response audit are retained; raw responses are removed. This is single-machine regression evidence, not a guaranteed speedup.
+
+To reproduce the release comparison from sibling Git checkouts with their tags fetched:
+
+```sh
+python tools/build_split_rust.py --sources .. --candidate-ref v2.2.3 --output .cache/rust-split-releases
+python split_compare.py --config .cache/rust-split-releases/compare.json --output results/rust-split-releases --runs 4 --best-passes 2
+```
+
+The builder archives the requested Trafilatura tags and uses each tag's locked dependency graph; it adds only the common benchmark adapter. Omit `--candidate-ref` to snapshot all three candidate working trees, including local changes. `--offline` requires already cached Cargo dependencies. The measured candidate was a recorded worktree snapshot; release packaging must preserve those runtime file hashes. The new APIs share an immutable input, not a single internal mutable DOM representation. This does not add a Go unified worker or change the production `rustHTML` worker.
+
 ## Quick Start
 
 For the released Go/Rust comparison, use Python 3.11+, Git, Go 1.27.1, and Rust 1.98.1 through rustup, with the platform linker installed. Run from this repository's root:
