@@ -175,7 +175,7 @@ class ComparisonTests(unittest.TestCase):
 
             with patch("run_benchmark.subprocess.run", side_effect=build) as builder:
                 config = release_config(arguments)
-                self.assertEqual(config, output / "compare.json")
+                self.assertEqual(config, (output / "compare.json").resolve())
                 self.assertEqual(release_config(arguments), config)
             builder.assert_called_once()
 
