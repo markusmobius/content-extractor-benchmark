@@ -1,1 +1,5 @@
 *.txt
+!requirements-performance.txt
+.cache/
+__pycache__/
+results/

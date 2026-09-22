@@ -1,0 +1,83 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/url"
+	"os"
+
+	"github.com/go-shiori/dom"
+	distiller "github.com/markusmobius/go-domdistiller"
+)
+
+type request struct {
+	ID       string `json:"id"`
+	URL      string `json:"url"`
+	HTMLPath string `json:"html_path"`
+}
+
+type metadata struct {
+	Title    string   `json:"title"`
+	Authors  []string `json:"authors"`
+	Date     string   `json:"date"`
+	Language string   `json:"language"`
+}
+
+type prediction struct {
+	ID       string   `json:"id"`
+	Text     string   `json:"text"`
+	Comments string   `json:"comments"`
+	Metadata metadata `json:"metadata"`
+	Error    string   `json:"error,omitempty"`
+}
+
+func extract(input request) prediction {
+	output := prediction{ID: input.ID}
+	file, err := os.Open(input.HTMLPath)
+	if err != nil {
+		output.Error = err.Error()
+		return output
+	}
+	defer file.Close()
+	document, err := dom.Parse(file)
+	if err != nil {
+		output.Error = err.Error()
+		return output
+	}
+	originalURL, _ := url.ParseRequestURI(input.URL)
+	result, err := distiller.Apply(document, &distiller.Options{OriginalURL: originalURL, SkipPagination: true})
+	if err != nil {
+		output.Error = err.Error()
+		return output
+	}
+	output.Text = result.Text
+	output.Metadata.Title = result.Title
+	return output
+}
+
+func run() error {
+	decoder := json.NewDecoder(os.Stdin)
+	encoder := json.NewEncoder(os.Stdout)
+	for {
+		var input request
+		if err := decoder.Decode(&input); err == io.EOF {
+			return nil
+		} else if err != nil {
+			return err
+		}
+		if input.ID == "" || input.HTMLPath == "" {
+			return fmt.Errorf("each input requires id and html_path")
+		}
+		if err := encoder.Encode(extract(input)); err != nil {
+			return err
+		}
+	}
+}
+
+func main() {
+	if err := run(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}

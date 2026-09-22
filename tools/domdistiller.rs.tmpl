@@ -1,0 +1,65 @@
+use rust_domdistiller::{apply_for_reader, Options};
+use serde::{Deserialize, Serialize};
+use std::io::{self, BufRead, Write};
+
+#[derive(Deserialize)]
+struct Request {
+    id: String,
+    url: String,
+    html_path: String,
+}
+
+#[derive(Default, Serialize)]
+struct Metadata {
+    title: String,
+    authors: Option<Vec<String>>,
+    date: String,
+    language: String,
+}
+
+#[derive(Default, Serialize)]
+struct Prediction {
+    id: String,
+    text: String,
+    comments: String,
+    metadata: Metadata,
+    #[serde(skip_serializing_if = "String::is_empty")]
+    error: String,
+}
+
+fn extract(request: Request) -> Prediction {
+    let mut output = Prediction {
+        id: request.id,
+        ..Default::default()
+    };
+    let options = Options {
+        original_url: (!request.url.is_empty()).then_some(request.url),
+        skip_pagination: true,
+        ..Default::default()
+    };
+    let result = std::fs::File::open(&request.html_path)
+        .map_err(rust_domdistiller::Error::from)
+        .and_then(|file| apply_for_reader(file, &options));
+    match result {
+        Ok(result) => {
+            output.text = result.text;
+            output.metadata.title = result.title;
+        }
+        Err(error) => output.error = error.to_string(),
+    }
+    output
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut writer = io::BufWriter::new(io::stdout().lock());
+    for line in io::stdin().lock().lines() {
+        let request: Request = serde_json::from_str(&line?)?;
+        if request.id.is_empty() || request.html_path.is_empty() {
+            return Err("each input requires id and html_path".into());
+        }
+        serde_json::to_writer(&mut writer, &extract(request))?;
+        writeln!(writer)?;
+        writer.flush()?;
+    }
+    Ok(())
+}

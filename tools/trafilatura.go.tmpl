@@ -1,0 +1,110 @@
+package main
+
+import (
+	"encoding/json"
+	"flag"
+	"fmt"
+	"io"
+	"net/url"
+	"os"
+	"strings"
+
+	"github.com/go-shiori/dom"
+	trafilatura "github.com/markusmobius/go-trafilatura/v2"
+)
+
+type request struct {
+	ID       string `json:"id"`
+	URL      string `json:"url"`
+	HTMLPath string `json:"html_path"`
+}
+
+type metadata struct {
+	Title    string   `json:"title"`
+	Authors  []string `json:"authors"`
+	Date     string   `json:"date"`
+	Language string   `json:"language"`
+}
+
+type prediction struct {
+	ID       string   `json:"id"`
+	Text     string   `json:"text"`
+	Comments string   `json:"comments"`
+	Metadata metadata `json:"metadata"`
+	Error    string   `json:"error,omitempty"`
+}
+
+func extract(input request, options trafilatura.Options) prediction {
+	output := prediction{ID: input.ID}
+	file, err := os.Open(input.HTMLPath)
+	if err != nil {
+		output.Error = err.Error()
+		return output
+	}
+	defer file.Close()
+	document, err := dom.Parse(file)
+	if err != nil {
+		output.Error = err.Error()
+		return output
+	}
+	options.OriginalURL, _ = url.ParseRequestURI(input.URL)
+	result, err := trafilatura.ExtractDocument(document, options)
+	if err != nil {
+		output.Error = err.Error()
+		return output
+	}
+	output.Text = result.ContentText
+	output.Comments = result.CommentsText
+	output.Metadata.Title = result.Metadata.Title
+	output.Metadata.Language = result.Metadata.Language
+	for _, name := range strings.Split(result.Metadata.Author, ";") {
+		if name = strings.TrimSpace(name); name != "" {
+			output.Metadata.Authors = append(output.Metadata.Authors, name)
+		}
+	}
+	if !result.Metadata.Date.IsZero() {
+		output.Metadata.Date = result.Metadata.Date.Format("2006-01-02")
+	}
+	return output
+}
+
+func run() error {
+	fallback := flag.Bool("fallback", false, "Enable native Go fallbacks")
+	comments := flag.Bool("comments", false, "Extract comments separately")
+	focus := flag.String("focus", "balanced", "balanced, precision, or recall")
+	flag.Parse()
+	options := trafilatura.Options{EnableFallback: *fallback, ExcludeComments: !*comments, ExcludeTables: false}
+	switch *focus {
+	case "balanced":
+		options.Focus = trafilatura.Balanced
+	case "precision":
+		options.Focus = trafilatura.FavorPrecision
+	case "recall":
+		options.Focus = trafilatura.FavorRecall
+	default:
+		return fmt.Errorf("unknown focus: %s", *focus)
+	}
+	decoder := json.NewDecoder(os.Stdin)
+	encoder := json.NewEncoder(os.Stdout)
+	for {
+		var input request
+		if err := decoder.Decode(&input); err == io.EOF {
+			return nil
+		} else if err != nil {
+			return err
+		}
+		if input.ID == "" || input.HTMLPath == "" {
+			return fmt.Errorf("each input requires id and html_path")
+		}
+		if err := encoder.Encode(extract(input, options)); err != nil {
+			return err
+		}
+	}
+}
+
+func main() {
+	if err := run(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}

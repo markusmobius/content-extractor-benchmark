@@ -1,0 +1,77 @@
+use chrono::{DateTime, FixedOffset};
+use rust_readability::{LocalTimeZone, Parser, Url};
+use serde::{Deserialize, Serialize};
+use std::io::{self, BufRead, Write};
+
+#[derive(Deserialize)]
+struct Request {
+    id: String,
+    url: String,
+    html_path: String,
+}
+
+#[derive(Default, Serialize)]
+struct Metadata {
+    title: String,
+    authors: Option<Vec<String>>,
+    date: String,
+    language: String,
+}
+
+#[derive(Default, Serialize)]
+struct Prediction {
+    id: String,
+    text: String,
+    comments: String,
+    metadata: Metadata,
+    #[serde(skip_serializing_if = "String::is_empty")]
+    error: String,
+}
+
+fn extract(request: Request) -> Prediction {
+    let mut output = Prediction {
+        id: request.id,
+        ..Default::default()
+    };
+    let url = Url::request(&request.url);
+    let result = std::fs::File::open(&request.html_path)
+        .map_err(rust_readability::Error::from)
+        .and_then(|file| Parser::new().parse_reader(file, url.as_ref()))
+        .and_then(|article| article.text().map(|text| (article, text)));
+    match result {
+        Ok((article, text)) => {
+            output.text = text;
+            output.metadata.title = article.title().to_owned();
+            output.metadata.language = article.language().to_owned();
+            let byline = article.byline().trim();
+            if !byline.is_empty() {
+                output.metadata.authors = Some(vec![byline.to_owned()]);
+            }
+            output.metadata.date = article
+                .published_time_with_local_timezone(&LocalTimeZone::utc())
+                .ok()
+                .and_then(|timestamp| {
+                    let date = DateTime::from_timestamp(timestamp.seconds, timestamp.nanoseconds)?;
+                    let zone = FixedOffset::east_opt(timestamp.offset)?;
+                    Some(date.with_timezone(&zone).format("%Y-%m-%d").to_string())
+                })
+                .unwrap_or_default();
+        }
+        Err(error) => output.error = error.to_string(),
+    }
+    output
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut writer = io::BufWriter::new(io::stdout().lock());
+    for line in io::stdin().lock().lines() {
+        let request: Request = serde_json::from_str(&line?)?;
+        if request.id.is_empty() || request.html_path.is_empty() {
+            return Err("each input requires id and html_path".into());
+        }
+        serde_json::to_writer(&mut writer, &extract(request))?;
+        writeln!(writer)?;
+        writer.flush()?;
+    }
+    Ok(())
+}

@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "sources": {
+    "legonews": {
+      "name": "LegoNews",
+      "repository": "https://github.com/markusmobius/content-extractor-benchmark",
+      "revision": "466fdbee8a504441eb78ed11d71c1da220681cab",
+      "archive_sha256": "26dc93718da6539ec0587d1eebed131da62fdc03cfe7b1ded940d6c77ec6947f",
+      "upstream": "https://github.com/markusmobius/go-trafilatura",
+      "license": "Apache-2.0",
+      "expected_records": 983,
+      "metric": "case-sensitive-snippet-micro-f1"
+    },
+    "scrapinghub": {
+      "name": "ScrapingHub",
+      "repository": "https://github.com/scrapinghub/article-extraction-benchmark",
+      "revision": "4a3bc979f76c0df73cb95fe272e2fc1b96f9f010",
+      "archive_sha256": "56e1aea5a04aabbca535bf11c7d9eed90cd4dabba63339eb46e6c12b8b4a213c",
+      "license": "MIT",
+      "expected_records": 181,
+      "metric": "case-sensitive-four-word-shingle-f1-of-macro-precision-recall"
+    },
+    "wcxb": {
+      "name": "WCXB",
+      "repository": "https://github.com/Murrough-Foley/web-content-extraction-benchmark",
+      "revision": "c039d5ee9f5a3a984a0e167e63aacd04e76e78a9",
+      "archive_sha256": "0d2e61cf5075a7eef99c23c5fd16e92870d5fcfaea09cb4a24d294b2355fa36f",
+      "website": "https://webcontentextraction.org/benchmark/",
+      "doi": "https://doi.org/10.5281/zenodo.19316874",
+      "license": "CC-BY-4.0",
+      "expected_records": 2008,
+      "expected_splits": {"dev": 1497, "test": 511},
+      "metric": "lowercase-word-multiset-macro-f1"
+    }
+  },
+  "metadata": {
+    "name": "Metadata",
+    "sources": ["legonews", "wcxb"],
+    "fields": ["authors", "title", "date"],
+    "annotation_policy": "Only nonempty supplied annotations are scored. Missing, null, and empty references are unknown, not negative labels.",
+    "metric": "normalized-exact-field-match-and-author-unit-micro-f1"
+  }
+}

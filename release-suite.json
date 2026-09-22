@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "scrapers": [
+    {
+      "name": "go-trafilatura-2.0.0",
+      "language": "go",
+      "engine": "trafilatura",
+      "repository": "https://github.com/markusmobius/go-trafilatura",
+      "tag": "v2.0.0",
+      "commit": "ae7ea0621e7c74484ce7d748fa44ba50cd7730ae",
+      "module": "github.com/markusmobius/go-trafilatura"
+    },
+    {
+      "name": "go-trafilatura-2.2.2",
+      "language": "go",
+      "engine": "trafilatura",
+      "repository": "https://github.com/markusmobius/go-trafilatura",
+      "tag": "v2.2.2",
+      "commit": "f4684e100869274311107325e3b72e47cc78db20",
+      "module": "github.com/markusmobius/go-trafilatura/v2"
+    },
+    {
+      "name": "go-domdistiller-1.0.0",
+      "language": "go",
+      "engine": "domdistiller",
+      "repository": "https://github.com/markusmobius/go-domdistiller",
+      "tag": "v1.0.0",
+      "commit": "25b8d046ffb4053bf68345d6fa59bc9ae1961ad8",
+      "module": "github.com/markusmobius/go-domdistiller"
+    },
+    {
+      "name": "go-readabilityV2-0.6.0",
+      "language": "go",
+      "engine": "readability",
+      "repository": "https://github.com/markusmobius/go-readabilityV2",
+      "tag": "v0.6.0",
+      "commit": "db6ab179f951f80ad176850001aaf486e2fbd367",
+      "module": "github.com/markusmobius/go-readabilityV2"
+    },
+    {
+      "name": "rust-trafilatura-2.2.2",
+      "language": "rust",
+      "engine": "trafilatura",
+      "repository": "https://github.com/markusmobius/rust-trafilatura",
+      "tag": "v2.2.2",
+      "commit": "7e01796e1a8b3e573ab50f05f90d5bc01ce9363c",
+      "package": "rust-trafilatura"
+    },
+    {
+      "name": "rust-domdistiller-1.0.0",
+      "language": "rust",
+      "engine": "domdistiller",
+      "repository": "https://github.com/markusmobius/rust-domdistiller",
+      "tag": "v1.0.0",
+      "commit": "72f8ba7c6ec59586bd7561d2a20c8764ba78d344",
+      "package": "rust-domdistiller"
+    },
+    {
+      "name": "rust-readability-0.6.1",
+      "language": "rust",
+      "engine": "readability",
+      "repository": "https://github.com/markusmobius/rust-readability",
+      "tag": "v0.6.1",
+      "commit": "5863f2ace1171a6b6e946a05e6b3915d0b4c658d",
+      "package": "rust-readability-v2"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "scrapers": [
+    {
+      "name": "legacy-trafilatura",
+      "version": "v1.11.2-0.20240925233727-6a4807611f40",
+      "profile": "core-only",
+      "options": {"fallback": false, "focus": "balanced", "comments": false, "tables": true},
+      "command": [".cache/extract{exe}", "-extractor", "trafilatura"],
+      "artifacts": ["cmd/extract/main.go", "go.mod", "go.sum"],
+      "env": {"GOMAXPROCS": "1", "GOGC": "100", "GOMEMLIMIT": "off", "GODEBUG": "", "TZ": "UTC"}
+    },
+    {
+      "name": "legacy-readability",
+      "version": "v0.0.0-20240923125239-59a7bd165825",
+      "profile": "standalone",
+      "options": {},
+      "command": [".cache/extract{exe}", "-extractor", "readability"],
+      "artifacts": ["cmd/extract/main.go", "go.mod", "go.sum"],
+      "env": {"GOMAXPROCS": "1", "GOGC": "100", "GOMEMLIMIT": "off", "GODEBUG": "", "TZ": "UTC"}
+    },
+    {
+      "name": "legacy-domdistiller",
+      "version": "v0.0.0-20240925231525-5f409da376c8",
+      "profile": "standalone",
+      "options": {"pagination": false},
+      "command": [".cache/extract{exe}", "-extractor", "domdistiller"],
+      "artifacts": ["cmd/extract/main.go", "go.mod", "go.sum"],
+      "env": {"GOMAXPROCS": "1", "GOGC": "100", "GOMEMLIMIT": "off", "GODEBUG": "", "TZ": "UTC"}
+    }
+  ]
+}
