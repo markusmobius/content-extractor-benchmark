@@ -50,12 +50,18 @@ class ComparisonTests(unittest.TestCase):
 
     def test_split_rust_worker_requires_released_locked_dependencies(self):
         receipt = {"versions": {name: release["version"] for name, release in RUST_RELEASES.items()},
-                   "sources": {"rust-trafilatura": {"commit": RUST_RELEASES["rust-trafilatura"]["commit"], "reference": "v2.2.3"}},
+                   "sources": {"rust-trafilatura": {"commit": RUST_RELEASES["rust-trafilatura"]["commit"], "reference": f"v{RUST_RELEASES['rust-trafilatura']['version']}"}},
                    "cargo_metadata": {"packages": [
                        {"name": name, "version": release["version"], "source": None if name == "rust-trafilatura" else
                         f"git+https://github.com/markusmobius/{release['repository']}?tag=v{release['version']}#{release['commit']}"}
                        for name, release in RUST_RELEASES.items()]}}
         validate_rust_receipt(receipt)
+        altered = json.loads(json.dumps(receipt))
+        altered["sources"]["rust-trafilatura"]["reference"] = RUST_RELEASES["rust-trafilatura"]["commit"]
+        validate_rust_receipt(altered)
+        altered["sources"]["rust-trafilatura"]["reference"] = "v0.0.0"
+        with self.assertRaisesRegex(ValueError, "exact released Trafilatura source"):
+            validate_rust_receipt(altered)
         for name in RUST_RELEASES:
             altered = json.loads(json.dumps(receipt))
             altered["versions"][name] = "0.0.0"

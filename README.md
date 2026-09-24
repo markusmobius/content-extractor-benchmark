@@ -39,22 +39,35 @@ Keep the remaining test subset for final validation. Do not tune extraction rule
 
 Holdout use is specific to an experiment, not a permanent property of a filename. Record which candidates have been evaluated on it; after inspecting those results, do not describe the same pages as unseen evidence for further tuning. The [Go-Trafilatura recommendation study](RECOMMENDATION_EVALUATION.md) used the cleaned WCXB test subset only for its predeclared author-normalization comparison.
 
-## Results: 2026-09-22
+## Results: 2026-09-23
 
-[go_rust_shared_performance_2026_09_22.json](go_rust_shared_performance_2026_09_22.json) records the **six-engine shared-input suite** on all 2,659 development pages: 983 LegoNews, 181 ScrapingHub, and 1,495 WCXB pages. Go-Trafilatura 2.0.0 is not included. Two persistent workers each parse a page once and run their three engines serially, in the same randomized engine order; which language runs first is randomized separately.
+[go_rust_shared_performance_2026_09_23.json](go_rust_shared_performance_2026_09_23.json) records the **six-engine shared-input suite**, rebuilt from the published tags, on all 2,659 development pages: 983 LegoNews, 181 ScrapingHub, and 1,495 WCXB pages. Go-Trafilatura 2.0.0 is not included. Two persistent workers each parse a page once and run their three engines serially, in the same randomized engine order; which language runs first is randomized separately. The [September 22 report](go_rust_shared_performance_2026_09_22.json) is retained unchanged as historical evidence; timings from separate runs are not pooled.
 
 ### Text Quality
 
 | Implementation | LegoNews F1 | ScrapingHub F1 | WCXB F1 | Errors |
 | --- | ---: | ---: | ---: | --- |
 | go-readabilityV2-0.6.0 | 87.82711% | 95.20557% | 78.47603% | 7 / 0 / 28 |
-| rust-readability-0.6.2 | 87.82711% | 95.20557% | 78.47603% | 7 / 0 / 28 |
+| rust-readability-0.6.3 | 87.82711% | 95.20557% | 78.47603% | 7 / 0 / 28 |
 | go-domdistiller-1.0.0 | 86.74080% | 92.74280% | 74.39696% | 0 / 0 / 0 |
 | rust-domdistiller-1.0.1 | 86.74080% | 92.74280% | 74.39696% | 0 / 0 / 0 |
 | go-trafilatura-2.2.2 | 90.88412% | 96.15663% | 78.49352% | 3 / 0 / 10 |
-| rust-trafilatura-2.2.3 | 90.88412% | 96.15663% | 78.49352% | 3 / 0 / 10 |
+| rust-trafilatura-2.2.4 | 90.88412% | 96.15663% | 78.49352% | 3 / 0 / 10 |
 
 These are separate corpus-specific F1 measures, not a combined ranking. Errors are LegoNews / ScrapingHub / WCXB counts and remain in the denominators. The first full warmup supplies the quality predictions; every later response reproduced that worker's scored output.
+
+### Metadata Quality
+
+| Implementation | Author Sets Exact / 1,290 | Author-Unit F1 | Titles Exact / 2,364 | Dates Exact / 1,530 |
+| --- | ---: | ---: | ---: | ---: |
+| go-readabilityV2-0.6.0 | 640 | 56.38767% | 1,247 | 763 |
+| rust-readability-0.6.3 | 640 | 56.38767% | 1,247 | 763 |
+| go-domdistiller-1.0.0 | 0 | 0.00000% | 1,106 | 0 |
+| rust-domdistiller-1.0.1 | 0 | 0.00000% | 1,106 | 0 |
+| go-trafilatura-2.2.2 | 695 | 58.80923% | 1,228 | 1,227 |
+| rust-trafilatura-2.2.4 | 696 | 58.86640% | 1,227 | 1,227 |
+
+Only nonempty supplied annotations are scored. These are the adapters' native metadata outputs; unannotated fields are not negative labels, and missing output is not repaired by another engine. All six scored-output digests match the September 22 report, so the parser release changes none of these observed quality results.
 
 Readability and DomDistiller match every scored Go/Rust output. Trafilatura has two metadata-only differences, with identical extracted text: the title on `legonews/klaenge-des-verschweigens.de.geschichte.html`, and the author on `legonews/golf.de-augusta.html`. Go/Rust Trafilatura author-set exact matches are 695/696 of 1,290 annotations; title matches are 1,228/1,227 of 2,364; date matches are both 1,227 of 1,530. All metadata metrics and per-source breakdowns remain separate in the JSON. Unsupported metadata is empty, not borrowed from another engine.
 
@@ -62,18 +75,18 @@ Readability and DomDistiller match every scored Go/Rust output. Trafilatura has 
 
 | Implementation | Shared Parse ms/page | Extraction ms/page | Extraction ms/page, All Four Passes |
 | --- | ---: | ---: | ---: |
-| go-readabilityV2-0.6.0 | 7.993 | 3.544 | 3.700 |
-| rust-readability-0.6.2 | 4.114 | 3.014 | 3.162 |
-| go-domdistiller-1.0.0 | 7.993 | 4.629 | 4.795 |
-| rust-domdistiller-1.0.1 | 4.114 | 2.495 | 2.608 |
-| go-trafilatura-2.2.2 | 7.993 | 8.469 | 8.794 |
-| rust-trafilatura-2.2.3 | 4.114 | 5.001 | 5.226 |
+| go-readabilityV2-0.6.0 | 5.638 | 2.669 | 2.705 |
+| rust-readability-0.6.3 | 2.525 | 2.441 | 2.451 |
+| go-domdistiller-1.0.0 | 5.638 | 3.618 | 3.628 |
+| rust-domdistiller-1.0.1 | 2.525 | 1.965 | 1.973 |
+| go-trafilatura-2.2.2 | 5.638 | 6.815 | 6.839 |
+| rust-trafilatura-2.2.4 | 2.525 | 4.000 | 4.026 |
 
-The first two timing columns use the same **best two of four complete passes (1 and 4)**, selected by total extraction time across all six engines and all pages. Every selected mean contains 5,318 page observations per engine; the all-four mean contains 10,636. Best-of-four figures are optimistic estimates, not the full-run average. All original pass totals and ratios are retained. Rust extraction is **1.18x faster for Readability, 1.86x for DomDistiller, and 1.69x for Trafilatura** on the selected passes; all four individual passes show the same direction.
+The first two timing columns use the same **best two of four complete passes (1 and 3)**, selected by total extraction time across all six engines and all pages. Every selected mean contains 5,318 page observations per engine; the all-four mean contains 10,636. Best-of-four figures are optimistic estimates, not the full-run average. All original pass totals and ratios are retained. Rust extraction is **1.09x faster for Readability, 1.84x for DomDistiller, and 1.70x for Trafilatura** on the selected passes; ratios use unrounded means. All four individual passes show the same direction. All-four shared parsing means are Go **5.667 ms/page** and Rust **2.531 ms/page**.
 
 Parsing is one shared cost per language/page, not three charges. The timer starts **after the entire file read completes** and includes in-memory decoding and HTML parsing. Extraction includes required private working copies/conversions, native metadata and text rendering. Rust destroys temporary article trees inside extraction; Go uses normal garbage collection, whose work can cross stage boundaries. Startup, file reads, JSON/IPC, and controller scoring are outside the native timers. Trafilatura fallback is disabled with no supplied candidates; comments and DomDistiller pagination are off. No parsed input or output is cached between requests.
 
-The run used Windows 11, AMD Ryzen AI 7 PRO 350, Go 1.27.1, and Rust 1.98.1 Windows GNU. Go uses the unchanged Trafilatura 2.2.2 dependency graph for all three engines, `GOMAXPROCS=1`, and `GOGC=100`; Rust uses Trafilatura 2.2.3's locked graph, ThinLTO, and mimalloc. This measures coordinated released suites, not isolated language or algorithm changes. Go's shared parser/dependency graph differs from the independently built historical executables below.
+The run used Windows 11, AMD Ryzen AI 7 PRO 350, Go 1.27.1, and Rust 1.98.1 Windows GNU. Go uses the unchanged Trafilatura 2.2.2 dependency graph for all three engines, `GOMAXPROCS=1`, and `GOGC=100`; Rust uses Trafilatura 2.2.4's locked graph, Readability 0.6.3, ThinLTO, and mimalloc. This measures coordinated released suites, not isolated language or algorithm changes. Go's shared parser/dependency graph differs from the independently built historical executables below. This Go/Rust comparison does not establish that the Rust parser update has no effect on extraction timing relative to the preceding Rust release.
 
 The audit checked 26,590 worker responses, including 21,272 measured responses containing 63,816 extraction timings. Input/artifact hashes, repeated scored outputs, complete-pass totals, weighted means, and common pass selection were verified. Both languages ran first exactly twice per page over four measured passes; the three engine positions form a reproducible partial six-pass block. No sleep events were recorded and every power sample showed AC at 100%. Raw responses were removed. These native timings must not be pooled with the historical request-latency results.
 
@@ -148,7 +161,7 @@ For the current six-engine shared-input comparison, use Python 3.11+, Git, Go 1.
 ```sh
 python -m pip install -r requirements-performance.txt
 python prepare.py
-python tools/build_split_rust.py --sources .. --candidate-ref v2.2.3 --output .cache/rust-split-releases
+python tools/build_split_rust.py --sources .. --previous-ref v2.2.3 --candidate-ref v2.2.4 --output .cache/rust-split-releases
 python tools/build_split_suite.py --rust-config .cache/rust-split-releases/compare.json --output .cache/go-rust-split-releases
 python split_compare.py --config .cache/go-rust-split-releases/compare.json --comparison languages --output results/go-rust-split --runs 4 --warmups 1 --best-passes 2 --seed 20260922
 ```
@@ -160,7 +173,7 @@ python split_compare.py --config .cache/go-rust-split-releases/compare.json --co
 In this Windows checkout, the current verified build is ready to reuse:
 
 ```powershell
-.\.cache\performance-venv\Scripts\python.exe -B split_compare.py --config .cache/go-rust-split-20260922/compare.json --comparison languages --output results/my-go-rust-split --runs 4 --warmups 1 --best-passes 2 --seed 20260922
+.\.cache\performance-venv\Scripts\python.exe -B split_compare.py --config .cache/go-rust-split-20260923/compare.json --comparison languages --output results/my-go-rust-split --runs 4 --warmups 1 --best-passes 2 --seed 20260922
 ```
 
 Pass explicit `--go`, `--git`, `--cargo`, or `--rustc` paths to the builders when needed. On Windows, the Rust builder defaults to the GNU toolchain; its MSYS2 UCRT64 linker/runtime directory must be on `PATH`. The runner requests Windows wakefulness by default, but this cannot prevent manual suspend. Keep the lid open and avoid concurrent heavy work during timing. No global power settings are changed.

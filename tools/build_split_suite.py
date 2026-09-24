@@ -18,9 +18,9 @@ from tools.build_releases import RUNTIME, build_go, load_suite, snapshot
 
 GO_RELEASES = ("go-readabilityV2-0.6.0", "go-domdistiller-1.0.0", "go-trafilatura-2.2.2")
 RUST_RELEASES = {
-    "rust-readability-v2": {"version": "0.6.2", "repository": "rust-readability", "commit": "7180c261cff311794b1b75ff3eae2a2bc63fd1c8"},
+    "rust-readability-v2": {"version": "0.6.3", "repository": "rust-readability", "commit": "52ec5ae744fb132e011ad9153ad3071e1227bdeb"},
     "rust-domdistiller": {"version": "1.0.1", "repository": "rust-domdistiller", "commit": "e95bff0cea7f7b9639abe04a8531b220b3ee4a6e"},
-    "rust-trafilatura": {"version": "2.2.3", "repository": "rust-trafilatura", "commit": "bbc95a6bbf67ed881cb42c0a830154f061bedbbe"},
+    "rust-trafilatura": {"version": "2.2.4", "repository": "rust-trafilatura", "commit": "fd57552f181c59fbb0b232250529ef68e967181b"},
 }
 
 
@@ -44,7 +44,8 @@ def validate_rust_receipt(receipt):
     if receipt.get("versions") != {name: release["version"] for name, release in RUST_RELEASES.items()}:
         raise ValueError("Rust worker does not contain the requested six-engine suite releases")
     root = receipt.get("sources", {}).get("rust-trafilatura", {})
-    if root.get("commit") != RUST_RELEASES["rust-trafilatura"]["commit"] or root.get("reference") not in ("v2.2.3", RUST_RELEASES["rust-trafilatura"]["commit"]):
+    root_release = RUST_RELEASES["rust-trafilatura"]
+    if root.get("commit") != root_release["commit"] or root.get("reference") not in (f"v{root_release['version']}", root_release["commit"]):
         raise ValueError("Rust worker must use the exact released Trafilatura source")
     for name, release in RUST_RELEASES.items():
         packages = [package for package in receipt["cargo_metadata"]["packages"] if package["name"] == name]
@@ -114,7 +115,7 @@ def build(arguments):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--rust-config", type=Path, required=True, help="Config produced by build_split_rust.py --candidate-ref v2.2.3")
+    parser.add_argument("--rust-config", type=Path, required=True, help=f"Config produced by build_split_rust.py --candidate-ref v{RUST_RELEASES['rust-trafilatura']['version']}")
     parser.add_argument("--rust-worker", default="candidate")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--go", default="go")
