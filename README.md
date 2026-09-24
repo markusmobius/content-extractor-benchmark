@@ -43,6 +43,8 @@ Holdout use is specific to an experiment, not a permanent property of a filename
 
 [go_rust_shared_performance_2026_09_23.json](go_rust_shared_performance_2026_09_23.json) records the **six-engine shared-input suite**, rebuilt from the published tags, on all 2,659 development pages: 983 LegoNews, 181 ScrapingHub, and 1,495 WCXB pages. Go-Trafilatura 2.0.0 is not included. Two persistent workers each parse a page once and run their three engines serially, in the same randomized engine order; which language runs first is randomized separately. The [September 22 report](go_rust_shared_performance_2026_09_22.json) is retained unchanged as historical evidence; timings from separate runs are not pooled.
 
+The current Rust releases are also available on crates.io: [Readability 0.6.3](https://crates.io/crates/rust-readability-v2/0.6.3), [DomDistiller 1.0.1](https://crates.io/crates/rust-domdistiller/1.0.1), and [Trafilatura 2.2.4](https://crates.io/crates/rust-trafilatura/2.2.4). Their source repositories are public. Registry publication does not replace the recorded Git source and build identities behind these measurements.
+
 ### Text Quality
 
 | Implementation | LegoNews F1 | ScrapingHub F1 | WCXB F1 | Errors |
@@ -156,7 +158,7 @@ The builder archives the requested Trafilatura tags and uses each tag's locked d
 
 ## Quick Start
 
-For the current six-engine shared-input comparison, use Python 3.11+, Git, Go 1.27.1, and Rust 1.98.1 through rustup, with the platform linker installed. The tagged Rust-Trafilatura repository must be a sibling checkout; fetching its locked dependencies requires authorized access. Run from this repository's root:
+For the current six-engine shared-input comparison, use Python 3.11+, Git, Go 1.27.1, and Rust 1.98.1 through rustup, with the platform linker installed. The public, tagged Rust-Trafilatura repository must be a sibling checkout; its locked source dependencies are also public. Run from this repository's root:
 
 ```sh
 python -m pip install -r requirements-performance.txt
@@ -207,7 +209,7 @@ python run_benchmark.py --list
 python run_benchmark.py --help
 ```
 
-`--limit-per-corpus` is a smoke-test sample, not a full benchmark. `--config` accepts an existing adapter configuration and skips builds. `--build-dir` verifies reused builds against the selected release pins; an incomplete or incompatible cache is rejected. Choose a new build directory to change compiler versions or rebuild. No dependencies are installed automatically, and Rust-Trafilatura still requires access to its private Git repository for a new build.
+`--limit-per-corpus` is a smoke-test sample, not a full benchmark. `--config` accepts an existing adapter configuration and skips builds. `--build-dir` verifies reused builds against the selected release pins; an incomplete or incompatible cache is rejected. Choose a new build directory to change compiler versions or rebuild. No dependencies are installed automatically; new builds fetch the pinned releases from their public repositories.
 
 On Windows, the command finds standard Go/Git/rustup installations and uses the MSYS2 UCRT64 compiler/runtime directory when installed at its standard location. Override paths with `--go`, `--git`, `--cargo`, `--rustc`, and repeatable `--runtime-dir`. The Windows keep-awake request is enabled by default; keep the lid open because this cannot prevent manual suspend. Windows sleep/resume events and power status are recorded as diagnostics outside the measurement timers. No global power settings are changed; battery operation is not an eligibility gate.
 
