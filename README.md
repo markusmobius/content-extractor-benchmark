@@ -121,9 +121,30 @@ Within this Lxml-enabled run, Go/Rust extraction ratios are **1.11x Readability,
 
 ### Release Validation
 
-[release_validation_2026_09_28.json](release_validation_2026_09_28.json) separately records final crate/module checksum and source verification, library checks, and published-package application tests. The native Lxml implementations match 6,541 Python candidate trees on identical input DOMs. A separate, unannotated 6,554-page application lab matched complete corrected Go/Rust outputs and standalone-flag independence; final external fallback was 281 pages (4.29%), versus Python's 220 (3.36%). These are selection frequencies, not accuracy scores. DomDistiller is still not Python jusText, and full Python extraction parity is not claimed.
+[release_validation_2026_09_28.json](release_validation_2026_09_28.json) separately records final crate/module checksum and source verification, library checks, and published-package application tests. The native Lxml implementations match 6,541 Python candidate trees on identical input DOMs. The separate application lab below matched complete corrected Go/Rust outputs and standalone-flag independence; full Python extraction parity is not claimed.
 
 Readability 0.6.4 retains prepared-retry reuse and exact score-update improvements; Rust-Trafilatura 2.2.5 retains lazy fallback preparation. The earlier 1.196x application-worker result predates the intentional fallback correction and is not a current-policy speed claim. The original 2x worker-speed target remains open.
+
+### Fallback Selection Rates
+
+The separate [6,554-page application-worker validation](https://github.com/markusmobius/content-extractor-benchmark/blob/97c0f3f67261c275ceb2ab532ee05992dbce8cc7/release_validation_2026_09_28.json)
+was captured before release packaging, with native readability-lxml explicitly
+selected, internally generated candidates and dates disabled. This unannotated
+corpus is not the 2,659-page benchmark above or a measurement of Mozilla mode.
+
+| Final Content Source | Go Pages (% of All 6,554) | Rust Pages (% of All 6,554) |
+| --- | ---: | ---: |
+| Trafilatura core (including recall) | 5,655 (86.283%) | 5,655 (86.283%) |
+| Native readability-lxml | 206 (3.143%) | 206 (3.143%) |
+| DomDistiller | 75 (1.144%) | 75 (1.144%) |
+| Internal baseline recovery | 597 (9.109%) | 597 (9.109%) |
+| No result | 21 (0.320%) | 21 (0.320%) |
+
+**External fallback: 281 / 6,554 pages (4.287%) in each language**, comprising
+readability-lxml and DomDistiller. Counts identify the final returned source,
+not engine calls or accuracy; recall and internal baseline recovery are separate.
+Python 2.2.0 selected readability-lxml on 158 pages and jusText on 62, totaling
+220 (3.357%) on this corpus. Go and Rust use DomDistiller, not jusText.
 
 ## Historical Results: 2026-09-21
 
