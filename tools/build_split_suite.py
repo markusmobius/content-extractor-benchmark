@@ -102,8 +102,10 @@ def build(arguments):
         [arguments.go, "-C", str(source), "test", "-mod=readonly", "-count=1", str(adapter), str(test_adapter)],
         [arguments.go, "-C", str(source), "vet", "-mod=readonly", str(adapter), str(test_adapter)],
     ]
-    for command in checks:
+    for stage, command in zip(("module checksums", "adapter tests", "go vet"), checks, strict=True):
+        print(f"Checking Go {stage}", flush=True)
         subprocess.run(command, env=environment, check=True)
+    print(f"Auditing {len(identity['files'])} unchanged Go release files", flush=True)
     for relative, expected in identity["files"].items():
         if sha256(source / relative) != expected:
             raise ValueError(f"Go build changed release source: {relative}")
@@ -113,6 +115,7 @@ def build(arguments):
                "test_adapter_sha256": sha256(test_adapter), "validation_commands": checks,
                "builder_sha256": sha256(Path(__file__)), "shared_builder_sha256": sha256(ROOT / "tools" / "build_releases.py"),
                "dependency_profile": "All three engines use the unchanged Go-Trafilatura v2.2.5 module graph; DomDistiller's pseudo-version resolves to the v1.0.0 release commit."}
+    print("Writing verified Go/Rust suite receipts", flush=True)
     write_json(directory / "build.json", receipt)
     go = {"name": "go", "version": "; ".join(f"{name}={version}" for name, version in sorted(versions.items())),
           "profile": "shared-DOM/native-split", "command": [str(binary)], "cwd": ".", "env": RUNTIME,

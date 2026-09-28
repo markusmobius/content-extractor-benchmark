@@ -39,22 +39,22 @@ Keep the remaining test subset for final validation. Do not tune extraction rule
 
 Holdout use is specific to an experiment, not a permanent property of a filename. Record which candidates have been evaluated on it; after inspecting those results, do not describe the same pages as unseen evidence for further tuning. The [Go-Trafilatura recommendation study](RECOMMENDATION_EVALUATION.md) used the cleaned WCXB test subset only for its predeclared author-normalization comparison.
 
-## Results: 2026-09-23
+## Results: 2026-09-28
 
-[go_rust_shared_performance_2026_09_23.json](go_rust_shared_performance_2026_09_23.json) records the **six-engine shared-input suite**, rebuilt from the published tags, on all 2,659 development pages: 983 LegoNews, 181 ScrapingHub, and 1,495 WCXB pages. Go-Trafilatura 2.0.0 is not included. Two persistent workers each parse a page once and run their three engines serially, in the same randomized engine order; which language runs first is randomized separately. The [September 22 report](go_rust_shared_performance_2026_09_22.json) is retained unchanged as historical evidence; timings from separate runs are not pooled.
+[go_rust_shared_performance_2026_09_28.json](go_rust_shared_performance_2026_09_28.json) records the **six-engine shared-input suite with Trafilatura fallback disabled**, rebuilt from the published tags, on all 2,659 development pages: 983 LegoNews, 181 ScrapingHub, and 1,495 WCXB pages. Two persistent workers each parse a page once and run their three engines serially, in the same randomized engine order; language order is balanced separately. The [September 23 report](go_rust_shared_performance_2026_09_23.json) and earlier JSON remain unchanged. Timings from separate runs are not pooled.
 
-The current Rust releases are also available on crates.io: [Readability 0.6.3](https://crates.io/crates/rust-readability-v2/0.6.3), [DomDistiller 1.0.1](https://crates.io/crates/rust-domdistiller/1.0.1), and [Trafilatura 2.2.4](https://crates.io/crates/rust-trafilatura/2.2.4). Their source repositories are public. Registry publication does not replace the recorded Git source and build identities behind these measurements.
+The Rust releases are available on crates.io: [Readability 0.6.4](https://crates.io/crates/rust-readability-v2/0.6.4), [DomDistiller 1.0.1](https://crates.io/crates/rust-domdistiller/1.0.1), and [Trafilatura 2.2.5](https://crates.io/crates/rust-trafilatura/2.2.5). Go-Trafilatura is also 2.2.5; Go-ReadabilityV2 0.6.0 and Go-DomDistiller 1.0.0 are unchanged. Registry publication does not replace the exact Git source and build identities behind these measurements.
 
 ### Text Quality
 
 | Implementation | LegoNews F1 | ScrapingHub F1 | WCXB F1 | Errors |
 | --- | ---: | ---: | ---: | --- |
 | go-readabilityV2-0.6.0 | 87.82711% | 95.20557% | 78.47603% | 7 / 0 / 28 |
-| rust-readability-0.6.3 | 87.82711% | 95.20557% | 78.47603% | 7 / 0 / 28 |
+| rust-readability-0.6.4 | 87.82711% | 95.20557% | 78.47603% | 7 / 0 / 28 |
 | go-domdistiller-1.0.0 | 86.74080% | 92.74280% | 74.39696% | 0 / 0 / 0 |
 | rust-domdistiller-1.0.1 | 86.74080% | 92.74280% | 74.39696% | 0 / 0 / 0 |
-| go-trafilatura-2.2.2 | 90.88412% | 96.15663% | 78.49352% | 3 / 0 / 10 |
-| rust-trafilatura-2.2.4 | 90.88412% | 96.15663% | 78.49352% | 3 / 0 / 10 |
+| go-trafilatura-2.2.5 | 90.88412% | 96.15663% | 78.49352% | 3 / 0 / 10 |
+| rust-trafilatura-2.2.5 | 90.88412% | 96.15663% | 78.49352% | 3 / 0 / 10 |
 
 These are separate corpus-specific F1 measures, not a combined ranking. Errors are LegoNews / ScrapingHub / WCXB counts and remain in the denominators. The first full warmup supplies the quality predictions; every later response reproduced that worker's scored output.
 
@@ -63,34 +63,67 @@ These are separate corpus-specific F1 measures, not a combined ranking. Errors a
 | Implementation | Author Sets Exact / 1,290 | Author-Unit F1 | Titles Exact / 2,364 | Dates Exact / 1,530 |
 | --- | ---: | ---: | ---: | ---: |
 | go-readabilityV2-0.6.0 | 640 | 56.38767% | 1,247 | 763 |
-| rust-readability-0.6.3 | 640 | 56.38767% | 1,247 | 763 |
+| rust-readability-0.6.4 | 640 | 56.38767% | 1,247 | 763 |
 | go-domdistiller-1.0.0 | 0 | 0.00000% | 1,106 | 0 |
 | rust-domdistiller-1.0.1 | 0 | 0.00000% | 1,106 | 0 |
-| go-trafilatura-2.2.2 | 695 | 58.80923% | 1,228 | 1,227 |
-| rust-trafilatura-2.2.4 | 696 | 58.86640% | 1,227 | 1,227 |
+| go-trafilatura-2.2.5 | 695 | 58.80923% | 1,228 | 1,227 |
+| rust-trafilatura-2.2.5 | 696 | 58.86640% | 1,227 | 1,227 |
 
-Only nonempty supplied annotations are scored. These are the adapters' native metadata outputs; unannotated fields are not negative labels, and missing output is not repaired by another engine. All six scored-output digests match the September 22 report, so the parser release changes none of these observed quality results.
+Only nonempty supplied annotations are scored. These are the adapters' native metadata outputs; unannotated fields are not negative labels, and missing output is not repaired by another engine. All six disabled-mode scored-output digests match the September 23 report exactly. This continuity does not describe the separate fallback-enabled configuration.
 
 Readability and DomDistiller match every scored Go/Rust output. Trafilatura has two metadata-only differences, with identical extracted text: the title on `legonews/klaenge-des-verschweigens.de.geschichte.html`, and the author on `legonews/golf.de-augusta.html`. Go/Rust Trafilatura author-set exact matches are 695/696 of 1,290 annotations; title matches are 1,228/1,227 of 2,364; date matches are both 1,227 of 1,530. All metadata metrics and per-source breakdowns remain separate in the JSON. Unsupported metadata is empty, not borrowed from another engine.
 
 ### Parsing And Extraction
 
-| Implementation | Shared Parse ms/page | Extraction ms/page | Extraction ms/page, All Four Passes |
-| --- | ---: | ---: | ---: |
-| go-readabilityV2-0.6.0 | 5.638 | 2.669 | 2.705 |
-| rust-readability-0.6.3 | 2.525 | 2.441 | 2.451 |
-| go-domdistiller-1.0.0 | 5.638 | 3.618 | 3.628 |
-| rust-domdistiller-1.0.1 | 2.525 | 1.965 | 1.973 |
-| go-trafilatura-2.2.2 | 5.638 | 6.815 | 6.839 |
-| rust-trafilatura-2.2.4 | 2.525 | 4.000 | 4.026 |
+| Implementation | Shared Parse ms/page | Extraction ms/page |
+| --- | ---: | ---: |
+| go-readabilityV2-0.6.0 | 7.308 | 3.545 |
+| rust-readability-0.6.4 | 3.369 | 3.239 |
+| go-domdistiller-1.0.0 | 7.308 | 4.794 |
+| rust-domdistiller-1.0.1 | 3.369 | 2.682 |
+| go-trafilatura-2.2.5 | 7.308 | 8.716 |
+| rust-trafilatura-2.2.5 | 3.369 | 5.324 |
 
-The first two timing columns use the same **best two of four complete passes (1 and 3)**, selected by total extraction time across all six engines and all pages. Every selected mean contains 5,318 page observations per engine; the all-four mean contains 10,636. Best-of-four figures are optimistic estimates, not the full-run average. All original pass totals and ratios are retained. Rust extraction is **1.09x faster for Readability, 1.84x for DomDistiller, and 1.70x for Trafilatura** on the selected passes; ratios use unrounded means. All four individual passes show the same direction. All-four shared parsing means are Go **5.667 ms/page** and Rust **2.531 ms/page**.
+Every mean uses **all four measured passes** after one full warmup: 10,636 observations per engine. No fastest-pass selection or outlier trimming is used. Go/Rust extraction ratios from unrounded means are **1.09x Readability, 1.79x DomDistiller, and 1.64x Trafilatura**; every individual pass has the same direction. These are paired language-suite comparisons, not isolated old/new-version speedups.
 
 Parsing is one shared cost per language/page, not three charges. The timer starts **after the entire file read completes** and includes in-memory decoding and HTML parsing. Extraction includes required private working copies/conversions, native metadata and text rendering. Rust destroys temporary article trees inside extraction; Go uses normal garbage collection, whose work can cross stage boundaries. Startup, file reads, JSON/IPC, and controller scoring are outside the native timers. Trafilatura fallback is disabled with no supplied candidates; comments and DomDistiller pagination are off. No parsed input or output is cached between requests.
 
-The run used Windows 11, AMD Ryzen AI 7 PRO 350, Go 1.27.1, and Rust 1.98.1 Windows GNU. Go uses the unchanged Trafilatura 2.2.2 dependency graph for all three engines, `GOMAXPROCS=1`, and `GOGC=100`; Rust uses Trafilatura 2.2.4's locked graph, Readability 0.6.3, ThinLTO, and mimalloc. This measures coordinated released suites, not isolated language or algorithm changes. Go's shared parser/dependency graph differs from the independently built historical executables below. This Go/Rust comparison does not establish that the Rust parser update has no effect on extraction timing relative to the preceding Rust release.
+The run used Windows 11, AMD Ryzen AI 7 PRO 350, Go 1.27.1, and Rust 1.98.1 Windows GNU. Go uses Trafilatura 2.2.5's released dependency graph for all three engines, `GOMAXPROCS=1`, and `GOGC=100`; Rust uses Trafilatura 2.2.5's locked graph, Readability 0.6.4, ThinLTO, and mimalloc. This measures coordinated released suites, not isolated language or algorithm changes. Go's shared parser/dependency graph differs from the independently built historical executables below. Absolute timings from different dates are not a controlled version comparison.
 
-The audit checked 26,590 worker responses, including 21,272 measured responses containing 63,816 extraction timings. Input/artifact hashes, repeated scored outputs, complete-pass totals, weighted means, and common pass selection were verified. Both languages ran first exactly twice per page over four measured passes; the three engine positions form a reproducible partial six-pass block. No sleep events were recorded and every power sample showed AC at 100%. Raw responses were removed. These native timings must not be pooled with the historical request-latency results.
+The audit checked 26,590 worker responses, including 21,272 measured responses containing 63,816 extraction timings. Input/artifact hashes, repeated scored outputs, complete-pass totals, and weighted means were verified. Both languages ran first exactly twice per page over four measured passes; the three engine positions form a reproducible partial six-pass block. No sleep events were recorded and all seven power samples showed AC. Raw responses were removed. These native timings must not be pooled with historical request latency or the separate application-worker optimization experiment.
+
+### Native Lxml Fallback
+
+[go_rust_lxml_performance_2026_09_28.json](go_rust_lxml_performance_2026_09_28.json) is a separate full run of the same released suites with Trafilatura's native Lxml fallback explicitly enabled. Candidates are generated internally; no standalone extractor results are supplied. The library's default selector remains Mozilla. Comments and pagination are off, tables are on, and every mean retains all four measured passes after one warmup.
+
+| Implementation | LegoNews F1 | ScrapingHub F1 | WCXB F1 | Errors |
+| --- | ---: | ---: | ---: | --- |
+| go-trafilatura-2.2.5 | 91.14833% | 95.94602% | 81.17181% | 3 / 0 / 9 |
+| rust-trafilatura-2.2.5 | 91.14833% | 95.94602% | 81.17181% | 3 / 0 / 9 |
+
+Relative to fallback-disabled extraction, this configuration raises LegoNews and WCXB F1 but lowers ScrapingHub F1. The three scores remain separate. Readability and DomDistiller's scored outputs are unchanged across modes. Go/Rust Trafilatura text matches on every page, with the same two metadata-only differences identified above; the JSON includes untimed field-level replay details.
+
+| Implementation | Author Sets Exact / 1,290 | Author-Unit F1 | Titles Exact / 2,364 | Dates Exact / 1,530 |
+| --- | ---: | ---: | ---: | ---: |
+| go-trafilatura-2.2.5 | 695 | 58.78543% | 1,229 | 1,289 |
+| rust-trafilatura-2.2.5 | 696 | 58.84257% | 1,228 | 1,289 |
+
+| Implementation | Shared Parse ms/page | Extraction ms/page |
+| --- | ---: | ---: |
+| go-readabilityV2-0.6.0 | 8.710 | 4.186 |
+| rust-readability-0.6.4 | 4.137 | 3.785 |
+| go-domdistiller-1.0.0 | 8.710 | 5.654 |
+| rust-domdistiller-1.0.1 | 4.137 | 3.020 |
+| go-trafilatura-2.2.5 | 8.710 | 23.737 |
+| rust-trafilatura-2.2.5 | 4.137 | 10.517 |
+
+Within this Lxml-enabled run, Go/Rust extraction ratios are **1.11x Readability, 1.87x DomDistiller, and 2.26x Trafilatura**. It has its own 26,590-response audit, complete pass totals, source identities, AC-power samples and no recorded sleep events. The disabled and enabled runs are not pooled: their absolute timing difference is not an isolated estimate of fallback cost. Neither run measures complete application-worker latency or proves a 2x improvement over the earlier Rust worker.
+
+### Release Validation
+
+[release_validation_2026_09_28.json](release_validation_2026_09_28.json) separately records final crate/module checksum and source verification, library checks, and published-package application tests. The native Lxml implementations match 6,541 Python candidate trees on identical input DOMs. A separate, unannotated 6,554-page application lab matched complete corrected Go/Rust outputs and standalone-flag independence; final external fallback was 281 pages (4.29%), versus Python's 220 (3.36%). These are selection frequencies, not accuracy scores. DomDistiller is still not Python jusText, and full Python extraction parity is not claimed.
+
+Readability 0.6.4 retains prepared-retry reuse and exact score-update improvements; Rust-Trafilatura 2.2.5 retains lazy fallback preparation. The earlier 1.196x application-worker result predates the intentional fallback correction and is not a current-policy speed claim. The original 2x worker-speed target remains open.
 
 ## Historical Results: 2026-09-21
 
@@ -189,7 +222,7 @@ Pass explicit `--go`, `--git`, `--cargo`, or `--rustc` paths to the builders whe
 
 ### Historical Request-Latency Runner
 
-The older seven-executable workflow remains available for reproducing the 2026-09-21 request-latency results. It does **not** implement the current shared-input timing protocol:
+The standalone-executable workflow does **not** implement the current shared-input timing protocol. The registry now includes eight entries. To reproduce the original seven-executable configuration, use its retained `--config` or the [historical seven-entry source snapshot](https://github.com/markusmobius/content-extractor-benchmark/tree/d433ab637f0a56c0926aa3698f470794a553472f). Without an explicit selection, this command runs the current registry:
 
 ```sh
 python -m pip install -r requirements-performance.txt
@@ -198,10 +231,10 @@ python run_benchmark.py --runs 4 --best-passes 2
 
 [run_benchmark.py](run_benchmark.py) prepares missing corpus data, builds the pinned engines once in `.cache/releases`, then reuses those builds. The registry now has eight entries, including Go-Trafilatura 2.2.5; select the original seven or reuse their config to reproduce the historical battery. By default it runs every registry entry on all 2,659 development pages with one full warmup and **N=4 measured passes**. `--best-passes 2` reports the same two fastest complete passes for every engine, as in the table above; omitting the flag reports the average of all measured passes. Progress is printed throughout. Each invocation creates a new timestamped directory under `results/` containing only `quality_YYYY_MM_DD.json` and `performance_YYYY_MM_DD.json`; existing dated results are never overwritten. Raw predictions and page timings are audited and deleted, including on failure or Ctrl+C. Quality-only mode produces just the quality summary.
 
-In this existing Windows checkout, reuse the already installed Python environment and seven release binaries:
+If the historical seven-binary cache is retained, reuse its explicit configuration with the current Python environment:
 
 ```powershell
-.\.cache\performance-venv\Scripts\python.exe run_benchmark.py --build-dir .cache/release-suite-2026-09-21 --best-passes 2
+.\.cache\performance-env\Scripts\python.exe run_benchmark.py --config .cache/release-suite-2026-09-21/compare.json --best-passes 2
 ```
 
 Useful options (combine with `--build-dir` above when reusing that cache):
@@ -222,7 +255,7 @@ On Windows, the command finds standard Go/Git/rustup installations and uses the 
 
 ### Individual Steps
 
-The underlying commands remain available for manual control:
+The underlying commands remain available for manual control. Use the historical source snapshot above for this exact seven-entry example; current `tools/build_releases.py` defaults to all eight registry entries:
 
 ```sh
 python -m pip install -r requirements-performance.txt
@@ -264,9 +297,9 @@ Go builds use the same compiler, CGO disabled, `GOMAXPROCS=1`, `-trimpath`, and 
 
 Every request reads and decodes its original HTML, parses it, extracts content and native metadata, renders plain text, and serializes one response. No HTTP acquisition, browser rendering, cross-request result cache, or extraction worker pool is introduced. Readability dates use its native publication-time API, with UTC for timestamps lacking a zone; explicit offsets retain their calendar date. DomDistiller does not borrow an author/date extractor. Date/language work differs between algorithm families and is part of the measured native pipeline, not artificially equalized.
 
-Rust-Trafilatura's repository is private at the time of this battery; reproducing that row requires Git access. This harness does not change repository visibility or publish private source. Select accessible subsets with repeated `--scraper NAME` on the builder and runner, but do not present a subset as the complete seven-engine battery.
+Rust-Trafilatura was private when the September 21 battery ran, but its source repository and published crates are now public. No private access is needed for the current release suites. Select subsets with repeated `--scraper NAME` on the builder and runner, but do not present a subset as the complete battery.
 
-The release battery uses all **2,659 development pages**, one complete warmup, and **N=4 complete measured passes per engine**: 10,636 timed observations per row and 74,452 across seven rows. Best-two reporting uses 5,318 observations per engine and retains all four pass totals. All engines stay alive together and process each page serially in seeded randomized order. Seven engines need 14 passes for exact per-page position balance under this schedule; N=4 is a reproducible partial block, not perfectly balanced. The actual order, process IDs, and every observation are checked before export; process IDs, position counts, and full-pass totals remain in the summaries. Quality remains three distinct text scores; speed is the page-weighted arithmetic mean across all HTML in the reported passes, with per-source breakdowns retained for inspection.
+The September 21 battery used all **2,659 development pages**, one complete warmup, and **N=4 complete measured passes per engine**: 10,636 timed observations per row and 74,452 across seven rows. Best-two reporting uses 5,318 observations per engine and retains all four pass totals. All engines stay alive together and process each page serially in seeded randomized order. Seven engines need 14 passes for exact per-page position balance under this schedule; N=4 is a reproducible partial block, not perfectly balanced. The actual order, process IDs, and every observation are checked before export; process IDs, position counts, and full-pass totals remain in the summaries. Quality remains three distinct text scores; speed is the page-weighted arithmetic mean across all HTML in the reported passes, with per-source breakdowns retained for inspection.
 
 ### Historical Adapter
 
