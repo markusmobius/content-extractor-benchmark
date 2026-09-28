@@ -17,6 +17,8 @@ import (
 	"golang.org/x/net/html"
 )
 
+const enableTrafilaturaFallback = __TRAFILATURA_FALLBACK__
+
 type request struct {
 	ID          string   `json:"id"`
 	URL         string   `json:"url"`
@@ -91,7 +93,8 @@ func extractTrafilatura(document *html.Node, pageURL string) prediction {
 	var output prediction
 	originalURL, _ := url.ParseRequestURI(pageURL)
 	result, err := trafilatura.ExtractDocument(document, trafilatura.Options{
-		OriginalURL: originalURL, EnableFallback: false, FallbackCandidates: nil,
+		OriginalURL: originalURL, EnableFallback: enableTrafilaturaFallback, FallbackCandidates: nil,
+		ReadabilityFallback: trafilatura.ReadabilityLxml,
 		ExcludeComments: true, ExcludeTables: false, Focus: trafilatura.Balanced,
 	})
 	if err != nil {

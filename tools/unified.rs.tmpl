@@ -170,7 +170,9 @@ fn extract_distiller(document: &Input, url: &str) -> Prediction {
 fn extract_trafilatura(document: &Input, url: &str) -> Prediction {
     let mut output = Prediction::default();
     let options = rust_trafilatura::Options {
-        original_url: readability::Url::request(url), enable_fallback: false,
+        original_url: readability::Url::request(url), enable_fallback: cfg!(feature = "benchmark-lxml-fallback"),
+        #[cfg(feature = "benchmark-lxml-fallback")]
+        readability_fallback: rust_trafilatura::ReadabilityFallback::ReadabilityLxml,
         fallback_candidates: None, exclude_comments: true, ..Default::default()
     };
     match rust_trafilatura::extract_document(document.document(), &options) {

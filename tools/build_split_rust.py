@@ -19,7 +19,7 @@ from tools.build_go_trafilatura import archive_source, command_output, file_hash
 
 def snapshot(repository, destination, reference, git):
     commit = git_output(git, repository, "rev-parse", f"{reference or 'HEAD'}^{{commit}}").decode().strip()
-    archive_source(git_output(git, repository, "archive", "--format=tar", commit), destination)
+    archive_source(git_output(git, repository, "-c", "core.autocrlf=false", "archive", "--format=tar", commit), destination)
     if reference is None:
         changed = git_output(git, repository, "ls-files", "-z", "--modified", "--others", "--exclude-standard").decode().split("\0")
         for relative in filter(None, changed):
@@ -48,6 +48,8 @@ def source_configuration(manifest, directory):
 
 
 def build(arguments):
+    if arguments.trafilatura_fallback == "lxml" and not arguments.candidate_only:
+        raise ValueError("Lxml mode requires --candidate-only and a release supporting native Lxml")
     arguments.output.mkdir(parents=True, exist_ok=False)
     environment = {**os.environ, "RUSTFLAGS": "", "CARGO_ENCODED_RUSTFLAGS": "", "CARGO_BUILD_JOBS": "1", "CARGO_NET_GIT_FETCH_WITH_CLI": "true"}
     for key in list(environment):
@@ -56,6 +58,8 @@ def build(arguments):
     cargo = [arguments.cargo, "+" + arguments.toolchain]
     scrapers = []
     for label, reference in (("previous", arguments.previous_ref), ("candidate", arguments.candidate_ref)):
+        if arguments.candidate_only and label == "previous":
+            continue
         directory = arguments.output / label
         directory.mkdir()
         source = directory / "rust-trafilatura"
@@ -72,16 +76,19 @@ def build(arguments):
         manifest = manifest_path.read_text(encoding="utf-8")
         parsed_manifest = tomllib.loads(manifest)
         worker_cargo = [*cargo, *(source_configuration(parsed_manifest, directory) if label == "candidate" and reference is None else [])]
-        manifest_path.write_text(manifest.replace("[features]\n", "[features]\nbenchmark-shared-input = []\n", 1), encoding="utf-8")
+        manifest_path.write_text(manifest.replace("[features]\n", "[features]\nbenchmark-shared-input = []\nbenchmark-lxml-fallback = []\n", 1), encoding="utf-8")
         target = arguments.target_dir.resolve() if arguments.target_dir else arguments.output / "target"
         command = [*worker_cargo, "build", *(["--locked"] if reference is not None else []), *(["--offline"] if arguments.offline else []), "--release", "--example", "benchmark_split", "--manifest-path", str(manifest_path), "--target-dir", str(target)]
-        if label == "candidate":
-            command.extend(["--features", "benchmark-shared-input"])
+        features = ["benchmark-shared-input"] if label == "candidate" else []
+        if arguments.trafilatura_fallback == "lxml":
+            features.append("benchmark-lxml-fallback")
+        if features:
+            command.extend(["--features", ",".join(features)])
         print(f"Building {label} unified Rust worker", flush=True)
         subprocess.run(command, env=environment, check=True)
         binary = directory / ("unified.exe" if os.name == "nt" else "unified")
         shutil.copy2(target / "release" / "examples" / ("benchmark_split.exe" if os.name == "nt" else "benchmark_split"), binary)
-        metadata = json.loads(command_output([*worker_cargo, "metadata", "--locked", "--offline", "--format-version", "1", "--manifest-path", str(manifest_path), *(["--features", "benchmark-shared-input"] if label == "candidate" else [])], environment))
+        metadata = json.loads(command_output([*worker_cargo, "metadata", "--locked", "--offline", "--format-version", "1", "--manifest-path", str(manifest_path), *(["--features", ",".join(features)] if features else [])], environment))
         versions = {package["name"]: package["version"] for package in metadata["packages"] if package["name"] in ("rust-readability-v2", "rust-domdistiller", "rust-trafilatura")}
         receipt = {"sources": identities, "versions": versions, "command": command, "cargo_metadata": metadata, "adapter_sha256": sha256(adapter), "binary_sha256": sha256(binary), "manifest_sha256": sha256(manifest_path), "profile": tomllib.loads(manifest)["profile"]["release"], "compiler": command_output([arguments.rustc, "+" + arguments.toolchain, "-vV"], environment).decode().strip()}
         for name, identity in identities.items():
@@ -89,7 +96,7 @@ def build(arguments):
                 if relative not in ("Cargo.toml", "Cargo.lock") and sha256(directory / name / relative) != expected:
                     raise ValueError(f"Build modified library source: {name}/{relative}")
         write_json(directory / "build.json", receipt)
-        scrapers.append({"name": label, "version": "; ".join(f"{name}={version}" for name, version in sorted(versions.items())), "profile": "shared-DOM/native-split", "options": {"engines": versions, "trafilatura_fallback": False, "comments": False, "pagination": False, "allocator": "mimalloc", "decode": "native-trafilatura-reader", "parser": "readability-html5-single-shared-input"}, "command": [str(binary)], "cwd": ".", "env": {"TZ": "UTC"}, "artifacts": [str(directory / "build.json"), str(adapter)]})
+        scrapers.append({"name": label, "version": "; ".join(f"{name}={version}" for name, version in sorted(versions.items())), "profile": "shared-DOM/native-split", "options": {"engines": versions, "trafilatura_fallback": arguments.trafilatura_fallback == "lxml", "trafilatura_fallback_mode": arguments.trafilatura_fallback, "comments": False, "pagination": False, "allocator": "mimalloc", "decode": "native-trafilatura-reader", "parser": "readability-html5-single-shared-input"}, "command": [str(binary)], "cwd": ".", "env": {"TZ": "UTC"}, "artifacts": [str(directory / "build.json"), str(adapter)]})
     write_json(arguments.output / "compare.json", {"schema_version": 1, "scrapers": scrapers})
     print(f"Ready: {arguments.output / 'compare.json'}", flush=True)
 
@@ -101,6 +108,8 @@ def main():
     parser.add_argument("--target-dir", type=Path)
     parser.add_argument("--previous-ref", default="v2.2.2")
     parser.add_argument("--candidate-ref", help="Exact Trafilatura tag/commit and its locked dependencies; omit to snapshot all three working trees")
+    parser.add_argument("--candidate-only", action="store_true", help="Build only the selected candidate release")
+    parser.add_argument("--trafilatura-fallback", choices=("disabled", "lxml"), default="disabled")
     parser.add_argument("--offline", action="store_true", help="Require all Cargo dependencies to be cached")
     parser.add_argument("--cargo", default="cargo")
     parser.add_argument("--rustc", default="rustc")

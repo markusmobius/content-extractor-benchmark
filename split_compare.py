@@ -112,7 +112,8 @@ def run_split(arguments):
         "selection": {"pages": len(records), "seed": arguments.seed, "limit_per_corpus": arguments.limit_per_corpus, "split": "dev"},
         "timing_scope": {
             "parse": "Native wall time for in-memory charset decoding and one shared HTML parse, after the entire file read has completed.",
-            "extraction": "Native wall time for one engine including required working copies/conversions, extraction, native metadata and plain-text rendering. Rust drops temporary article trees before its timer stops; Go uses normal garbage collection, not forced per-call collection. Trafilatura fallback is always off.",
+            "extraction": "Native wall time for one engine including required working copies/conversions, extraction, native metadata and plain-text rendering. Rust drops temporary article trees before its timer stops; Go uses normal garbage collection, not forced per-call collection.",
+            "trafilatura_fallback": {scraper["name"]: scraper["options"].get("trafilatura_fallback_mode", "disabled") for scraper in scrapers},
             "excluded": "File opening/reading, worker startup, request decoding, IPC, response JSON serialization, controller validation and quality scoring.",
         },
         "environment": {"platform": platform.platform(), "processor": platform.processor(), "logical_cpus": library.cpu_count(), "power_before": power_status(library)},

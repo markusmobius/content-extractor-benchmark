@@ -16,11 +16,11 @@ from prepare import sha256, write_json
 from tools.build_releases import RUNTIME, build_go, load_suite, snapshot
 
 
-GO_RELEASES = ("go-readabilityV2-0.6.0", "go-domdistiller-1.0.0", "go-trafilatura-2.2.2")
+GO_RELEASES = ("go-readabilityV2-0.6.0", "go-domdistiller-1.0.0", "go-trafilatura-2.2.5")
 RUST_RELEASES = {
-    "rust-readability-v2": {"version": "0.6.3", "repository": "rust-readability", "commit": "52ec5ae744fb132e011ad9153ad3071e1227bdeb"},
+    "rust-readability-v2": {"version": "0.6.4", "repository": "rust-readability", "commit": "79d5b8ac6bfe54a79270a887ea11464ca9aed5d5"},
     "rust-domdistiller": {"version": "1.0.1", "repository": "rust-domdistiller", "commit": "e95bff0cea7f7b9639abe04a8531b220b3ee4a6e"},
-    "rust-trafilatura": {"version": "2.2.4", "repository": "rust-trafilatura", "commit": "fd57552f181c59fbb0b232250529ef68e967181b"},
+    "rust-trafilatura": {"version": "2.2.5", "repository": "rust-trafilatura", "commit": "995ec38a4fc1fb98ab5893f6e186062477ab5c15"},
 }
 
 
@@ -54,7 +54,7 @@ def validate_rust_receipt(receipt):
             raise ValueError(f"Rust worker dependency differs from the pinned release: {name}")
 
 
-def rust_worker(config, name):
+def rust_worker(config, name, fallback_mode="disabled"):
     worker, = load_scrapers(config.resolve(), [name])
     receipts = [Path(path) for path in worker["artifacts_sha256"] if Path(path).name == "build.json"]
     if len(receipts) != 1:
@@ -64,14 +64,20 @@ def rust_worker(config, name):
     if receipt["binary_sha256"] != sha256(Path(worker["command"][0])) or receipt["adapter_sha256"] != sha256(ROOT / "tools" / "unified.rs.tmpl"):
         raise ValueError("Rust binary or adapter differs from the verified split build")
     options = worker["options"]
-    if any(options.get(key) is not False for key in ("trafilatura_fallback", "comments", "pagination")):
-        raise ValueError("Rust worker requires fallback/comments/pagination disabled")
+    if any(options.get(key) is not False for key in ("comments", "pagination")):
+        raise ValueError("Rust worker requires comments/pagination disabled")
+    if options.get("trafilatura_fallback") is not (fallback_mode == "lxml") or options.get("trafilatura_fallback_mode", "disabled") != fallback_mode:
+        raise ValueError("Rust worker fallback mode differs from the requested Go/Rust suite")
+    resolved = receipt["cargo_metadata"]["resolve"]
+    features = next(node["features"] for node in resolved["nodes"] if node["id"] == resolved["root"])
+    if ("benchmark-lxml-fallback" in features) != (fallback_mode == "lxml") or "lab-profile" in features:
+        raise ValueError("Rust compiled features differ from the requested uninstrumented fallback mode")
     return {**{key: worker[key] for key in ("version", "profile", "options", "command", "cwd", "env")},
             "name": "rust", "artifacts": list(worker["artifacts_sha256"])}
 
 
 def build(arguments):
-    rust = rust_worker(arguments.rust_config, arguments.rust_worker)
+    rust = rust_worker(arguments.rust_config, arguments.rust_worker, arguments.trafilatura_fallback)
     entries = load_suite(ROOT / "release-suite.json", GO_RELEASES)
     entry, = [entry for entry in entries if entry["engine"] == "trafilatura"]
     arguments.output.mkdir(parents=True, exist_ok=False)
@@ -79,7 +85,13 @@ def build(arguments):
     directory.mkdir()
     source, identity = snapshot(entry, directory, arguments.git)
     binary = directory / ("unified.exe" if os.name == "nt" else "unified")
-    build, _ = build_go(entry, source, directory, binary, arguments, os.environ.copy(), ROOT / "tools" / "unified.go.tmpl")
+    template = (ROOT / "tools" / "unified.go.tmpl").read_bytes()
+    marker = b"__TRAFILATURA_FALLBACK__"
+    if template.count(marker) != 1:
+        raise ValueError("Go adapter requires exactly one fallback-mode marker")
+    configured_adapter = directory / "configured.go.tmpl"
+    configured_adapter.write_bytes(template.replace(marker, b"true" if arguments.trafilatura_fallback == "lxml" else b"false"))
+    build, _ = build_go(entry, source, directory, binary, arguments, os.environ.copy(), configured_adapter)
     engines = go_engine_identities(build["modules"], entries)
     adapter = directory / "adapter.go"
     test_adapter = directory / "adapter_test.go"
@@ -100,12 +112,12 @@ def build(arguments):
                "engine_releases": engines, **build, "binary_sha256": sha256(binary),
                "test_adapter_sha256": sha256(test_adapter), "validation_commands": checks,
                "builder_sha256": sha256(Path(__file__)), "shared_builder_sha256": sha256(ROOT / "tools" / "build_releases.py"),
-               "dependency_profile": "All three engines use the unchanged Go-Trafilatura v2.2.2 module graph; DomDistiller's pseudo-version resolves to the v1.0.0 release commit."}
+               "dependency_profile": "All three engines use the unchanged Go-Trafilatura v2.2.5 module graph; DomDistiller's pseudo-version resolves to the v1.0.0 release commit."}
     write_json(directory / "build.json", receipt)
     go = {"name": "go", "version": "; ".join(f"{name}={version}" for name, version in sorted(versions.items())),
           "profile": "shared-DOM/native-split", "command": [str(binary)], "cwd": ".", "env": RUNTIME,
           "artifacts": [str(directory / "build.json"), str(adapter), str(test_adapter)],
-          "options": {"engines": versions, "trafilatura_fallback": False, "comments": False, "tables": True,
+          "options": {"engines": versions, "trafilatura_fallback": arguments.trafilatura_fallback == "lxml", "trafilatura_fallback_mode": arguments.trafilatura_fallback, "comments": False, "tables": True,
                       "pagination": False, "metadata": "native-only", "naive_date_timezone": "UTC",
                       "decode": "go-shiori/dom.Parse", "parser": "golang.org/x/net/html-single-shared-input",
                       "garbage_collection": "GOGC=100; no forced per-call collection"}}
@@ -117,6 +129,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--rust-config", type=Path, required=True, help=f"Config produced by build_split_rust.py --candidate-ref v{RUST_RELEASES['rust-trafilatura']['version']}")
     parser.add_argument("--rust-worker", default="candidate")
+    parser.add_argument("--trafilatura-fallback", choices=("disabled", "lxml"), default="disabled")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--go", default="go")
     parser.add_argument("--git", default="git")

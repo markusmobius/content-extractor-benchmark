@@ -1,0 +1,150 @@
+{
+  "application_lab": {
+    "combined_isolated_trafilatura_matches_per_language": 6554,
+    "complete_go_rust_output_hash_matches": 6554,
+    "cross_report_audit_sha256": "aecb8ebcad4f6f55f2e4f1d1a9b2120c93111fcc4d309d08610f7b1f34a21f95",
+    "dates_enabled": false,
+    "external_final_fraction": {
+      "go": 0.04287458040891059,
+      "python": 0.033567287152883735,
+      "rust": 0.04287458040891059
+    },
+    "external_final_pages": {
+      "go": 281,
+      "python": 220,
+      "rust": 281
+    },
+    "external_overlap_python": 198,
+    "final_source_label_matches": 6554,
+    "final_sources": {
+      "go": {
+        "baseline": 597,
+        "distiller": 75,
+        "error": 21,
+        "native": 5591,
+        "native_recall": 64,
+        "readability": 206
+      },
+      "python": {
+        "baseline": 605,
+        "error": 34,
+        "justext": 62,
+        "native": 5624,
+        "native_recall": 71,
+        "readability": 158
+      },
+      "rust": {
+        "baseline": 597,
+        "distiller": 75,
+        "error": 21,
+        "native": 5591,
+        "native_recall": 64,
+        "readability": 206
+      }
+    },
+    "go_rust_only_external": 83,
+    "pages": 6554,
+    "pagination": true,
+    "plain_diagnostic_matches_per_language": 6554,
+    "profile": "stress",
+    "python_only_external": 22,
+    "scope": "Pre-release application-worker integration evidence. Go/Rust library defaults remain Mozilla; these workers explicitly use native Lxml and generate their own candidates. Selection frequency is not accuracy, error rate, or a 2x speed claim. DomDistiller remains different from Python jusText.",
+    "source_report_sha256": {
+      "go": "286a0852dbb6ec4697d9b6706e43595cb50ab22e5fbd19c619b16798238c6545",
+      "python": "12066d3ec6521d2c2ec5890973c4ab3c79d25ed6142ba3a79ec490600003e6b6",
+      "rust": "c51db820dc31cf93b157e4411c8864edac1cc87c2375a7b634560efe26567a8e"
+    },
+    "standalone_readability_distiller_metadata": true,
+    "unchanged_standalone_results_per_language": 6554,
+    "url": "https://www.example.com",
+    "verbose": true
+  },
+  "date": "2026-09-28",
+  "kind": "release-validation",
+  "library_checks": {
+    "go_trafilatura": {
+      "caveat": "The strict reviewed-difference gate passes; ordinary go test still reports the eight existing default-mode differences.",
+      "compatibility_checker_tests": 9,
+      "native_inventory_mappings": 56,
+      "passed": 7366,
+      "reviewed_failures": 8,
+      "skipped": 42,
+      "vet_build_format_tidy": "passed"
+    },
+    "rust_readability": {
+      "doc_passed": 1,
+      "exact_score_comparisons": 200000,
+      "format_strict_all_feature_clippy": "passed",
+      "html_parser_cases": 1793,
+      "release_tests_including_optional": 59,
+      "saved_extraction_pages": 133
+    },
+    "rust_trafilatura": {
+      "doc_passed": 1,
+      "format_strict_all_feature_clippy": "passed",
+      "library_passed": 54,
+      "ordinary_ignored": 2,
+      "worker_allocators": [
+        "mimalloc",
+        "system"
+      ],
+      "worker_passed": 5
+    }
+  },
+  "lxml_candidates": {
+    "cases": 6541,
+    "fixture_sha256": "7c664f77a68164c74d99cbb2d912c05fcf3ed66ee8edf6920206c1abf36c6fd3",
+    "go_exact_matches": 6541,
+    "python_readability_source_sha256": "59f0863b23ebdc5e1b04ba725c60eb1c6075b4c00353d273bb3f316a480589b0",
+    "python_trafilatura_version": "2.2.0",
+    "rust_exact_matches": 6541,
+    "scope": "Identical structured input DOMs and identical output-tree serialization; not full Python extraction parity or annotated accuracy."
+  },
+  "package_verification": [
+    {
+      "checksum": "43a619ba19db4cef7bd16eba53260e9bff6e9cf22ae9492d5794c02053a303ae",
+      "commit": "79d5b8ac6bfe54a79270a887ea11464ca9aed5d5",
+      "package": "rust-readability-v2",
+      "source_files_compared_count": 36,
+      "vcs_clean": true,
+      "version": "0.6.4"
+    },
+    {
+      "checksum": "cf631e20307da12fc0551d7fa33954c85033159dc90445b60993b40156cef6e7",
+      "commit": "995ec38a4fc1fb98ab5893f6e186062477ab5c15",
+      "package": "rust-trafilatura",
+      "source_files_compared_count": 29,
+      "vcs_clean": true,
+      "version": "2.2.5"
+    },
+    {
+      "commit": "dbba8836c7800da5c1e4d5f39459ab1f3de8a032",
+      "go_mod_sum": "h1:yF6hkpCpMLg44O07KQOaKpAGQ2B7FoW8lqGiw/VNkBk=",
+      "package": "github.com/markusmobius/go-trafilatura/v2",
+      "source_files_compared_count": 64,
+      "sum": "h1:T/PXPVpg+sxu0ZIJm0Od2PORGjS7nYsXSPw/FlmUluA=",
+      "version": "v2.2.5",
+      "zip_sha256": "2fb9c1def8d545b158de0638e66b2cf45e4818189ebdedc1fa6615b4f3bb9107"
+    }
+  ],
+  "published_application_checks": {
+    "allocators": [
+      "mimalloc",
+      "system"
+    ],
+    "benchmark_go_tests_vet": "passed",
+    "complete": true,
+    "finished_utc": "2026-09-28T12:14:46.2277780Z",
+    "go_trafilatura": "v2.2.5",
+    "live_go_parity_tests_ignored_per_allocator": 2,
+    "portable_go_tests_vet": "passed",
+    "rust_all_target_all_feature_clippy": "passed",
+    "rust_protocol_tests_per_allocator": 2,
+    "rust_readability": "0.6.4",
+    "rust_trafilatura": "2.2.5",
+    "rust_unit_tests_per_allocator": 19,
+    "script_sha256": "1322c853d0cbefb8eb0b21e387338df0fd3d65863d5b0b828f1297461da5239f"
+  },
+  "retention": "Aggregate validation and original evidence hashes. The separate application corpus has no independent accuracy annotations; it is not pooled with the 2,659-page annotated benchmark. Historical reports are unchanged.",
+  "schema_version": 1
+}

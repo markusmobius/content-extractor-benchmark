@@ -163,19 +163,26 @@ For the current six-engine shared-input comparison, use Python 3.11+, Git, Go 1.
 ```sh
 python -m pip install -r requirements-performance.txt
 python prepare.py
-python tools/build_split_rust.py --sources .. --previous-ref v2.2.3 --candidate-ref v2.2.4 --output .cache/rust-split-releases
+python tools/build_split_rust.py --sources .. --candidate-only --candidate-ref v2.2.5 --output .cache/rust-split-releases
 python tools/build_split_suite.py --rust-config .cache/rust-split-releases/compare.json --output .cache/go-rust-split-releases
-python split_compare.py --config .cache/go-rust-split-releases/compare.json --comparison languages --output results/go-rust-split --runs 4 --warmups 1 --best-passes 2 --seed 20260922
+python split_compare.py --config .cache/go-rust-split-releases/compare.json --comparison languages --output results/go-rust-split --runs 4 --warmups 1 --best-passes 4 --seed 20260928
 ```
 
-[tools/build_split_suite.py](tools/build_split_suite.py) builds the unified Go worker, verifies its Readability/DomDistiller dependency commits against the release pins, and pairs it with the exact-tag Rust candidate after checking its binary, adapter, and dependency identities. Go's DomDistiller pseudo-version resolves to the v1.0.0 release commit. The Rust qualification builder creates previous/candidate workers, but only the current candidate is selected for this six-engine run. An existing verified Rust release config can be reused instead of rebuilding. Neither builder edits library sources or dependency locks.
+[tools/build_split_suite.py](tools/build_split_suite.py) builds the unified Go worker, verifies its Readability/DomDistiller dependency commits against the release pins, and pairs it with the exact-tag Rust candidate after checking its binary, adapter, and dependency identities. Go's DomDistiller pseudo-version resolves to the v1.0.0 release commit. `--candidate-only` avoids building a historical Rust baseline. An existing verified Rust release config can be reused instead of rebuilding. Neither builder edits library sources or dependency locks.
+
+Fallback is disabled by default. For a separate native Lxml-enabled evaluation,
+pass `--trafilatura-fallback lxml` to **both builders** and use new build and result
+directories. The suite rejects mismatched modes and instrumented Rust builds.
+Trafilatura generates its own candidates; neither mode supplies standalone
+Readability or DomDistiller results. `--best-passes 4` reports every measured pass
+without fastest-pass selection.
 
 [split_compare.py](split_compare.py) runs one full warmup and four measured passes, writing `split-performance.json` and `REPORT.md` in a new directory. The JSON retains separate parsing/extraction means, all pass totals, common best-pass selection, quality scores, source/build receipts, and sleep/power diagnostics. `--comparison languages` reports extraction ratios without the old/new release regression gate. Add `--limit-per-corpus 3` for a smoke check, not performance evidence. Existing results are never overwritten; temporary raw responses are removed.
 
-In this Windows checkout, the current verified build is ready to reuse:
+After building the disabled-mode suite in this Windows checkout, reuse it with:
 
 ```powershell
-.\.cache\performance-venv\Scripts\python.exe -B split_compare.py --config .cache/go-rust-split-20260923/compare.json --comparison languages --output results/my-go-rust-split --runs 4 --warmups 1 --best-passes 2 --seed 20260922
+.\.cache\performance-env\Scripts\python.exe -B split_compare.py --config .cache/go-rust-split-20260928-disabled/compare.json --comparison languages --output results/my-go-rust-split --runs 4 --warmups 1 --best-passes 4 --seed 20260928
 ```
 
 Pass explicit `--go`, `--git`, `--cargo`, or `--rustc` paths to the builders when needed. On Windows, the Rust builder defaults to the GNU toolchain; its MSYS2 UCRT64 linker/runtime directory must be on `PATH`. The runner requests Windows wakefulness by default, but this cannot prevent manual suspend. Keep the lid open and avoid concurrent heavy work during timing. No global power settings are changed.
@@ -189,7 +196,7 @@ python -m pip install -r requirements-performance.txt
 python run_benchmark.py --runs 4 --best-passes 2
 ```
 
-[run_benchmark.py](run_benchmark.py) prepares missing corpus data, builds the pinned engines once in `.cache/releases`, then reuses those builds. By default it runs all seven engines on all 2,659 development pages with one full warmup and **N=4 measured passes**. `--best-passes 2` reports the same two fastest complete passes for every engine, as in the table above; omitting the flag reports the average of all measured passes. Progress is printed throughout. Each invocation creates a new timestamped directory under `results/` containing only `quality_YYYY_MM_DD.json` and `performance_YYYY_MM_DD.json`; existing dated results are never overwritten. Raw predictions and page timings are audited and deleted, including on failure or Ctrl+C. Quality-only mode produces just the quality summary.
+[run_benchmark.py](run_benchmark.py) prepares missing corpus data, builds the pinned engines once in `.cache/releases`, then reuses those builds. The registry now has eight entries, including Go-Trafilatura 2.2.5; select the original seven or reuse their config to reproduce the historical battery. By default it runs every registry entry on all 2,659 development pages with one full warmup and **N=4 measured passes**. `--best-passes 2` reports the same two fastest complete passes for every engine, as in the table above; omitting the flag reports the average of all measured passes. Progress is printed throughout. Each invocation creates a new timestamped directory under `results/` containing only `quality_YYYY_MM_DD.json` and `performance_YYYY_MM_DD.json`; existing dated results are never overwritten. Raw predictions and page timings are audited and deleted, including on failure or Ctrl+C. Quality-only mode produces just the quality summary.
 
 In this existing Windows checkout, reuse the already installed Python environment and seven release binaries:
 
@@ -240,11 +247,11 @@ On Windows, `--rust-toolchain 1.98.1-x86_64-pc-windows-gnu` selects the GNU Rust
 
 ### Release Battery
 
-[release-suite.json](release-suite.json) pins the exact Git tags and peeled commits for seven independently built executables:
+[release-suite.json](release-suite.json) retains the seven historical executables and adds Go-Trafilatura 2.2.5 for the current suite:
 
 | Implementation | Releases | Profile |
 | --- | --- | --- |
-| Go-Trafilatura | 2.0.0 and 2.2.2 | Balanced, core-only, comments off, tables on, automatic native metadata |
+| Go-Trafilatura | 2.0.0, 2.2.2 and 2.2.5 | Balanced, core-only, comments off, tables on, automatic native metadata |
 | Go-DomDistiller | 1.0.0 | Standalone, pagination off |
 | Go-ReadabilityV2 | 0.6.0 | Default reader/parser and native metadata |
 | Rust-Trafilatura | 2.2.2 | Same Trafilatura options as Go |

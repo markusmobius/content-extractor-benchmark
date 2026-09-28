@@ -22,12 +22,39 @@ from test_benchmark import fixture
 from tools.build_go_trafilatura import archive_source, json_objects
 from tools.build_releases import go_adapter, load_suite
 from tools.build_split_rust import source_configuration
-from tools.build_split_suite import GO_RELEASES, RUST_RELEASES, go_engine_identities, validate_rust_receipt
+from tools.build_split_suite import GO_RELEASES, RUST_RELEASES, go_engine_identities, rust_worker, validate_rust_receipt
 from tools.publish_results import audit_run, publish_results, select_best_passes
 from split_compare import decode_response, paired_regressions, stage_summary
 
 
 class ComparisonTests(unittest.TestCase):
+    def test_split_fallback_modes_require_matching_options_and_features(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            receipt_path = Path(temporary) / "build.json"
+            receipt = {"binary_sha256": "hash", "adapter_sha256": "hash",
+                       "cargo_metadata": {"resolve": {"root": "trafilatura", "nodes": [
+                           {"id": "trafilatura", "features": ["benchmark-shared-input"]}]}}}
+            worker = {"version": "test", "profile": "shared-DOM/native-split", "command": ["worker"],
+                      "cwd": ".", "env": {}, "artifacts_sha256": {str(receipt_path): "hash"}}
+            for mode in ("disabled", "lxml"):
+                with self.subTest(mode=mode):
+                    worker["options"] = {"trafilatura_fallback": mode == "lxml", "trafilatura_fallback_mode": mode,
+                                         "comments": False, "pagination": False}
+                    features = ["benchmark-shared-input"] + (["benchmark-lxml-fallback"] if mode == "lxml" else [])
+                    receipt["cargo_metadata"]["resolve"]["nodes"][0]["features"] = features
+                    receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+                    with patch("tools.build_split_suite.load_scrapers", return_value=[worker]), \
+                         patch("tools.build_split_suite.validate_rust_receipt"), \
+                         patch("tools.build_split_suite.sha256", return_value="hash"):
+                        self.assertEqual(rust_worker(Path("config.json"), "candidate", mode)["options"], worker["options"])
+                        with self.assertRaisesRegex(ValueError, "fallback mode differs"):
+                            rust_worker(Path("config.json"), "candidate", "disabled" if mode == "lxml" else "lxml")
+                        for invalid in (features + ["lab-profile"], ["benchmark-shared-input"] if mode == "lxml" else features + ["benchmark-lxml-fallback"]):
+                            receipt["cargo_metadata"]["resolve"]["nodes"][0]["features"] = invalid
+                            receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+                            with self.assertRaisesRegex(ValueError, "compiled features differ"):
+                                rust_worker(Path("config.json"), "candidate", mode)
+
     def test_split_go_dependencies_require_exact_release_commits(self):
         entries = load_suite(Path(__file__).parent / "release-suite.json", GO_RELEASES)
         with tempfile.TemporaryDirectory() as temporary:
@@ -227,18 +254,19 @@ class ComparisonTests(unittest.TestCase):
                 self.assertEqual(release_config(arguments), config)
             builder.assert_called_once()
 
-    def test_release_suite_pins_all_seven_requested_versions(self):
+    def test_release_suite_retains_historical_and_current_versions(self):
         entries = load_suite(Path(__file__).parent / "release-suite.json")
         self.assertEqual([(entry["name"], entry["tag"]) for entry in entries], [
             ("go-trafilatura-2.0.0", "v2.0.0"),
             ("go-trafilatura-2.2.2", "v2.2.2"),
+            ("go-trafilatura-2.2.5", "v2.2.5"),
             ("go-domdistiller-1.0.0", "v1.0.0"),
             ("go-readabilityV2-0.6.0", "v0.6.0"),
             ("rust-trafilatura-2.2.2", "v2.2.2"),
             ("rust-domdistiller-1.0.0", "v1.0.0"),
             ("rust-readability-0.6.1", "v0.6.1"),
         ])
-        self.assertEqual(len({entry["commit"] for entry in entries}), 7)
+        self.assertEqual(len({entry["commit"] for entry in entries}), len(entries))
         self.assertEqual(load_suite(Path(__file__).parent / "release-suite.json", [entries[0]["name"]]), entries[:1])
 
     def test_old_and_current_trafilatura_use_identical_adapter_logic(self):

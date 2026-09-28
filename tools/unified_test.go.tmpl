@@ -14,6 +14,22 @@ import (
 	"golang.org/x/net/html"
 )
 
+func TestLxmlShortArticle(test *testing.T) {
+	if !enableTrafilaturaFallback {
+		test.Skip("Lxml mode is not enabled")
+	}
+	article := strings.Repeat("The community library will open a new reading room next month. Residents reviewed the plans at a public meeting, and the council approved the funding. ", 3)
+	footer := strings.Repeat("This site provides general information and cannot guarantee that every statement is complete. Readers should seek independent advice and review all terms before making decisions. ", 12)
+	document, err := dom.Parse(strings.NewReader("<title>Library reading room</title><main><h1>Library reading room</h1><p>" + article + "</p></main><div class='footer'><h2>How this site works</h2><p>" + footer + "</p></div>"))
+	if err != nil {
+		test.Fatal(err)
+	}
+	output := extractTrafilatura(document, "https://example.com/library")
+	if output.Error != "" || !strings.Contains(output.Text, "community library") || strings.Contains(output.Text, "independent advice") {
+		test.Fatalf("Lxml short-article regression: %+v", output)
+	}
+}
+
 func TestSharedInputAllEngineOrders(test *testing.T) {
 	sources := []string{
 		"<html lang='en'><title>Shared article</title><meta name='author' content='A Writer'><article><h1>Shared article</h1><p>" + strings.Repeat("An article with details, evidence, and useful context. ", 40) + "</p></article></html>",
