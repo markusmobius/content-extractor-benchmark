@@ -9,11 +9,11 @@ take precedence; stop and ask when they conflict with a publication constraint.
 
 This repository owns the shared comparison of six implementations:
 
-| Engine | Go Repository | Rust Repository | Rust Crate |
-| --- | --- | --- | --- |
-| DomDistiller | go-domdistiller | rust-domdistiller | rust-domdistiller |
-| Mozilla Readability | go-readabilityV2 | rust-readability | rust-readability-v2 |
-| Trafilatura | go-trafilatura | rust-trafilatura | rust-trafilatura |
+| Go Package | Rust Package | Rust Repository |
+| --- | --- | --- |
+| go-domdistiller | rust-domdistiller | rust-domdistiller |
+| go-readabilityV2 | rust-readability-v2 | rust-readability |
+| go-trafilatura | rust-trafilatura | rust-trafilatura |
 
 All repositories are under github.com/markusmobius. The application workers in
 newsprinceton-gopython are separate consumers, not the subject of library docs.
@@ -23,9 +23,9 @@ newsprinceton-gopython are separate consumers, not the subject of library docs.
 - README.md answers what was compared, how to read the results, and how to
   reproduce the benchmark. Put the newest completed results first under
   `## Results: YYYY-MM-DD`; label previous results historical.
-- Library README.md files explain purpose, scope, usage and current tradeoffs.
-  Prefer the Go-Trafilatura structure when aligning its Rust counterpart. Keep
-  readable library documentation separate from detailed investigation logs.
+- Library README.md files follow the approved structure below. Keep their
+	package-specific APIs and creator credits local, with identical philosophy
+	and current six-package comparison sections. Do not restore a legacy outline.
 - Library UPSTREAM.md files hold source pins, compatibility differences,
   methodology, exact hashes, test coverage and verification limitations.
 - Library CHANGELOG.md files describe user-visible changes and their reasons
@@ -38,16 +38,62 @@ newsprinceton-gopython are separate consumers, not the subject of library docs.
 - Crates.io README content comes from the published crate archive, not the
   latest GitHub README. Publication must be planned after documentation is final.
 
+## Required Credits
+
+Keep the benchmark's attribution to Markus Mobius as maintainer, the
+`go-trafilatura` comparison tooling, and Adrien Barbaresi's `adbar/trafilatura`
+work. Preserve the LegoNews provenance credits to BBAW, tsolewski and
+diskursmonitor.de; acknowledge the ScrapingHub/Zyte contributors for
+`scrapinghub/article-extraction-benchmark` and Murrough Foley for
+`Murrough-Foley/web-content-extraction-benchmark`. Corpus annotations and the
+rights to original saved pages are distinct; retain the pinned license records.
+
+Every library AGENTS.md must name its own verified creators, not merely say
+"credit upstream". Required lineages include the Chromium Authors,
+Christian Kohlschuetter and Radhi Fadlillah for the two `go-domdistiller`-derived
+packages; Arc90 Inc, Mozilla, Radhi Fadlillah, Felipe Martin and the Readeck
+contributors for the two `go-readabilityV2`-derived packages; and Adrien Barbaresi
+plus Arc90, starrhorne, iterationlabs and gfxmonk for the two `adbar/trafilatura`
+ports. Distinguish Markus Mobius's maintenance/porting from original authorship.
+Preserve additional authors and licenses in each package's inherited notices.
+
+## Library README Structure
+
+Use these exact level-two headings, in order, in all six library READMEs.
+This benchmark README retains its own methodology/results layout.
+
+| Order | Heading | Required Content |
+| --- | --- | --- |
+| 1 | `## Philosophy` | Bring your own HTML; stay close to the declared upstream; provide very fast native Go and Rust packages. Explain caller-owned acquisition, documented deviations and behavior-preserving optimization supported by measurements. |
+| 2 | `## Overview` | Inputs, outputs, scope, current release and actual behavioral reference. Identify any fetching helpers honestly. |
+| 3 | `## Installation` | A command pinned to the published version, compiler requirements and distinct package/import names. |
+| 4 | `## Usage` | A complete runnable supplied-HTML example without network input, useful output, concise entry-point summary and API link. |
+| 5 | `## Options` | Important controls, actual defaults and effects; package-specific details under level-three headings. |
+| 6 | `## Current Quality and Speed` | The identical shared comparison with Extraction Speed and Text Quality subsections, full package names, measured versions, boundaries and evidence links. |
+| 7 | `## Compatibility and Limitations` | Behavioral target, omissions, known differences and output safety; link technical evidence. |
+| 8 | `## Development` | Existing test/check commands and prerequisites, without claiming unrun gates passed. |
+| 9 | `## License and Credits` | Explicitly named original creators and port authors, correct licenses/notices and upstream links. A link alone is not an acknowledgment. |
+
+Use the full package name as H1, followed by a short purpose paragraph. Do not
+append old layouts, ranking essays, copied API structs or historical timing
+tables. Optional comparisons belong with their package-specific options and
+must not alter the identical shared comparison. Check whole-document structure,
+examples and credits, not just table equality. New designs require approval.
+
 ## Shared Benchmark Format
 
 All six library READMEs must have a `## Current Quality and Speed` section.
 Use one common six-implementation speed table, not six unrelated selections:
 
-| Extractor | Go Version | Rust Version | Go ms/page | Rust ms/page | Go/Rust |
-| --- | --- | --- | ---: | ---: | ---: |
-| Readability | measured version | measured version | measured mean | measured mean | ratio |
-| DomDistiller | measured version | measured version | measured mean | measured mean | ratio |
-| Trafilatura FAST | measured version | measured version | measured mean | measured mean | ratio |
+| Go Package (Measured Version) | Rust Package (Measured Version) | Go ms/page | Rust ms/page | Go/Rust |
+| --- | --- | ---: | ---: | ---: |
+| go-readabilityV2 (measured version) | rust-readability-v2 (measured version) | measured mean | measured mean | ratio |
+| go-domdistiller (measured version) | rust-domdistiller (measured version) | measured mean | measured mean | ratio |
+| go-trafilatura (measured version, FAST) | rust-trafilatura (measured version, FAST) | measured mean | measured mean | ratio |
+
+Use full package identifiers throughout headings, prose and tables. Quality
+rows also name both packages. Upstream projects use owner-qualified identifiers;
+actual API names and code aliases remain unchanged.
 
 1. Select one completed shared-suite report from this repository for all three
 	rows and all six READMEs. Use immutable commit links to its JSON and README.
@@ -64,12 +110,12 @@ Use one common six-implementation speed table, not six unrelated selections:
 	runtime changes; never claim that an unmeasured version was timed.
 5. Report parsing separately, charged once per language/page in the shared
 	suite. Include decoding, normalization, DOM construction and any separate
-	Trafilatura noscript tree in the stated parsing boundary. Do not hide work
+	`go-trafilatura` / `rust-trafilatura` noscript tree in the stated parsing boundary. Do not hide work
 	in setup or add the shared parse cost once per engine.
 6. State corpus names/counts, hardware, OS, toolchains, allocator/build profile,
 	warmup/pass counts, relevant options, and included/excluded work once in
 	concise common prose. The report keeps the full provenance.
-7. Put non-FAST Trafilatura results in a separately identified comparison from
+7. Put non-FAST `go-trafilatura` / `rust-trafilatura` results in a separate comparison from
 	its own report. Do not blend that run with the FAST six-engine table or use
 	cross-run absolute times to infer a fallback overhead or release speedup.
 8. Keep text quality distinct from speed. Use named corpora and their own F1
@@ -87,25 +133,26 @@ and new shared-input measurements have different boundaries and are not a
 controlled speedup experiment. Move detail to technical references rather than
 filling the current section with competing historical headline numbers.
 
-## Trafilatura Explanation
+## go-trafilatura and rust-trafilatura
 
 - FAST disables external fallback. Native recall and baseline recovery can
   still run. Non-FAST permits only internally generated bundled readability-lxml.
-- Mozilla Readability and DomDistiller are independent extractors. Removing
-  their use as Trafilatura fallback candidates does not remove their standalone
+- `go-readabilityV2` / `rust-readability-v2` and `go-domdistiller` /
+	`rust-domdistiller` are independent extractors. Removing their use as
+	`go-trafilatura` / `rust-trafilatura` candidates does not remove their standalone
   APIs or any application's independently requested extraction.
 - Explain why supplied candidates were removed: candidates extracted before
-  Trafilatura's input cleanup can retain long boilerplate that passes its length
+	`go-trafilatura` / `rust-trafilatura` input cleanup can retain long boilerplate that passes its length
   checks and replaces article content. Do not say the other extractors perform
   no cleaning; the difference is which prepared input reaches them.
-- The historical same-version Go 2.2.2 control selected external fallback on
+- The historical same-version `go-trafilatura` 2.2.2 control selected external fallback on
   780/6,554 pages (11.90%) with internally generated candidates versus
-  2,408/6,554 (36.74%) with supplied candidates; DomDistiller accounted for
+	2,408/6,554 (36.74%) with supplied candidates; `go-domdistiller` accounted for
   4 versus 1,614 selections. Label these historical controlled measurements.
 - The 2.2.6 lxml-only policy returned external fallback on 202/6,554 (3.08%).
   That policy also changes the fallback algorithm set, so the entire reduction
-  from 36.74% is not attributable to candidate removal alone. Python's jusText
-  is not DomDistiller, and Mozilla Readability is not bundled readability-lxml.
+	from 36.74% is not attributable to candidate removal alone. `miso-belica/jusText`
+	is not `go-domdistiller`, and `mozilla/readability` is not bundled readability-lxml.
 - Count the source of final returned content, not calls or temporary candidate
   acceptance. Keep failures in the denominator and report internal recovery
   separately. A lower rate does not establish higher quality.

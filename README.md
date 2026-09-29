@@ -58,11 +58,11 @@ not averaged. Errors below are in that corpus order and remain in denominators.
 
 ### Current Quality and Speed
 
-| Extractor | Go Version | Rust Version | Go ms/page | Rust ms/page | Go/Rust |
-| --- | --- | --- | ---: | ---: | ---: |
-| Readability | 0.6.0 | 0.6.5 | 4.755 | 3.945 | 1.21x |
-| DomDistiller | 1.0.0 | 1.0.1 | 6.159 | 3.400 | 1.81x |
-| Trafilatura FAST | 2.2.6 | 2.2.6 | 11.329 | 6.570 | 1.72x |
+| Go Package (Measured Version) | Rust Package (Measured Version) | Go ms/page | Rust ms/page | Go/Rust |
+| --- | --- | ---: | ---: | ---: |
+| `go-readabilityV2` 0.6.0 | `rust-readability-v2` 0.6.5 | 4.755 | 3.945 | 1.21x |
+| `go-domdistiller` 1.0.0 | `rust-domdistiller` 1.0.1 | 6.159 | 3.400 | 1.81x |
+| `go-trafilatura` 2.2.6 (FAST) | `rust-trafilatura` 2.2.6 (FAST) | 11.329 | 6.570 | 1.72x |
 
 Parsing is separate: **Go 11.283 / Rust 6.386 ms/page**, charged once per
 language/page for the shared suite. The rows name the actual measured versions.
@@ -72,11 +72,11 @@ pins do not replace those labels or introduce new measurements.
 Both languages have these text scores; matching text scores do not imply equal
 HTML or metadata. Known metadata differences are listed below.
 
-| Extractor | LegoNews F1 | ScrapingHub F1 | WCXB F1 | Errors |
-| --- | ---: | ---: | ---: | --- |
-| Readability | 87.82711% | 95.20557% | 78.47603% | 7 / 0 / 28 |
-| DomDistiller | 86.74080% | 92.74280% | 74.39696% | 0 / 0 / 0 |
-| Trafilatura FAST | 90.91534% | 96.15663% | 78.51703% | 4 / 0 / 10 |
+| Go Package | Rust Package | LegoNews F1 | ScrapingHub F1 | WCXB F1 | Errors |
+| --- | --- | ---: | ---: | ---: | --- |
+| `go-readabilityV2` | `rust-readability-v2` | 87.82711% | 95.20557% | 78.47603% | 7 / 0 / 28 |
+| `go-domdistiller` | `rust-domdistiller` | 86.74080% | 92.74280% | 74.39696% | 0 / 0 / 0 |
+| `go-trafilatura` (FAST) | `rust-trafilatura` (FAST) | 90.91534% | 96.15663% | 78.51703% | 4 / 0 / 10 |
 
 All means retain **all four measured passes after one complete warmup**:
 10,636 observations per engine per mode. No best-pass selection or trimming.
