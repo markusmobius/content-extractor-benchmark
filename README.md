@@ -39,7 +39,123 @@ Keep the remaining test subset for final validation. Do not tune extraction rule
 
 Holdout use is specific to an experiment, not a permanent property of a filename. Record which candidates have been evaluated on it; after inspecting those results, do not describe the same pages as unseen evidence for further tuning. The [Go-Trafilatura recommendation study](RECOMMENDATION_EVALUATION.md) used the cleaned WCXB test subset only for its predeclared author-normalization comparison.
 
-## Results: 2026-09-28
+## Results: 2026-09-29
+
+The released **Go/Rust Trafilatura 2.2.6** suites use **Rust-Readability 0.6.5**,
+Go-ReadabilityV2 0.6.0 and DomDistiller 1.0.0/1.0.1. Standalone Readability remains
+Mozilla. Trafilatura permits only bundled readability-lxml in non-FAST mode;
+Mozilla, DomDistiller and supplied/custom fallback candidates are not used.
+The application goHTML/rustHTML workers always use FAST, independently of these
+explicit library benchmark modes.
+
+[FAST results](go_rust_shared_performance_2026_09_29.json),
+[non-FAST lxml results](go_rust_lxml_performance_2026_09_29.json), and
+[release validation](release_validation_2026_09_29.json) contain source/build
+identities, quality scores, every pass total, package audits and verification
+limits. Each mode ran the same 2,659 saved development pages: 983 LegoNews,
+181 ScrapingHub and 1,495 WCXB. The three F1 scores use different rules and are
+not averaged. Errors below are in that corpus order and remain in denominators.
+
+### Current Text Quality And Timing
+
+| Implementation | Trafilatura Mode | LegoNews F1 | ScrapingHub F1 | WCXB F1 | Errors | Parse ms/page | Extraction ms/page |
+| --- | --- | ---: | ---: | ---: | --- | ---: | ---: |
+| go-readabilityV2-0.6.0 | FAST suite | 87.82711% | 95.20557% | 78.47603% | 7 / 0 / 28 | 11.283 | 4.755 |
+| rust-readability-0.6.5 | FAST suite | 87.82711% | 95.20557% | 78.47603% | 7 / 0 / 28 | 6.386 | 3.945 |
+| go-domdistiller-1.0.0 | FAST suite | 86.74080% | 92.74280% | 74.39696% | 0 / 0 / 0 | 11.283 | 6.159 |
+| rust-domdistiller-1.0.1 | FAST suite | 86.74080% | 92.74280% | 74.39696% | 0 / 0 / 0 | 6.386 | 3.400 |
+| go-trafilatura-2.2.6 | FAST | 90.91534% | 96.15663% | 78.51703% | 4 / 0 / 10 | 11.283 | 11.329 |
+| rust-trafilatura-2.2.6 | FAST | 90.91534% | 96.15663% | 78.51703% | 4 / 0 / 10 | 6.386 | 6.570 |
+| go-trafilatura-2.2.6 | Non-FAST lxml | 91.13924% | 95.98168% | 79.56922% | 4 / 0 / 9 | 11.518 | 24.745 |
+| rust-trafilatura-2.2.6 | Non-FAST lxml | 91.13924% | 95.98168% | 79.56922% | 4 / 0 / 9 | 6.545 | 10.910 |
+
+All means retain **all four measured passes after one complete warmup**:
+10,636 observations per engine per mode. No best-pass selection or trimming.
+Within the FAST run, Go/Rust extraction ratios are 1.21x Readability, 1.81x
+DomDistiller and **1.72x Trafilatura**. Non-FAST Trafilatura is **2.27x**.
+These are paired language-suite ratios, not old/new release speedups or a
+2x application-worker improvement. Absolute timings from separate runs are not
+pooled or used to isolate fallback cost.
+
+The host was Windows 11 / Ryzen AI 7 PRO 350, Go 1.27.1 and Rust 1.98.1 GNU,
+ThinLTO/mimalloc. Each mode audited 26,590 worker responses, including 21,272
+timed responses. Both retained all seven AC-power samples and no sleep events.
+Language order is balanced twice first/second per page; engine order uses the
+same randomized partial six-position block. Repeated scored outputs are stable.
+
+Parsing is charged once per worker/page for decoding and all required input
+trees: default parsing for standalone Mozilla/DomDistiller, plus a separate
+scripting-disabled Trafilatura tree when noscript is present. It is no longer
+necessarily one parse. No rendered HTML is reparsed. Extraction includes working
+copies, native metadata and text rendering. File reads, startup, IPC and scoring
+are excluded; Go GC work may cross stage boundaries. Comments and pagination are
+off, tables are on, and no extracted candidates are supplied to Trafilatura.
+Benchmark DomDistiller is still measured as an independent library, although
+the application workers no longer execute it.
+
+The lxml-only policy is a behavior choice, not a universal quality improvement:
+non-FAST WCXB F1 is 79.56922%, versus 81.17181% in the older configuration that
+also allowed DomDistiller rescue. FAST now rejects four LegoNews inputs rather
+than three. Saved labels are unchanged; these differences are not hidden or
+removed from the score denominators.
+
+### Current Metadata
+
+| Implementation | Mode | Author Sets Exact / 1,290 | Author-Unit F1 | Titles Exact / 2,364 | Dates Exact / 1,530 |
+| --- | --- | ---: | ---: | ---: | ---: |
+| go-trafilatura-2.2.6 | FAST | 709 | 59.53339% | 1,228 | 1,227 |
+| rust-trafilatura-2.2.6 | FAST | 710 | 59.58987% | 1,227 | 1,227 |
+| go-trafilatura-2.2.6 | Non-FAST lxml | 709 | 59.50945% | 1,229 | 1,289 |
+| rust-trafilatura-2.2.6 | Non-FAST lxml | 710 | 59.56592% | 1,228 | 1,289 |
+
+Readability and DomDistiller scored outputs match in both languages and remain
+unchanged across modes. Trafilatura text matches on every page; the two remaining
+Go/Rust differences are `metadata.title` on
+`legonews/klaenge-des-verschweigens.de.geschichte.html` and `metadata.authors` on
+`legonews/golf.de-augusta.html`. Untimed replays verify those exact fields.
+All standalone metadata scores and source-specific breakdowns remain in the JSON.
+
+### Current Fallback Rates
+
+The separate **6,554-page unannotated application corpus** is not pooled with
+the annotated benchmark. Counts describe the final returned source, including
+failures in the denominator; calls or temporary selections are not the rate.
+
+| Final Content Source | Production FAST | Go Non-FAST Library | Rust Non-FAST Library |
+| --- | ---: | ---: | ---: |
+| Native core | 5,726 | 5,604 | 5,604 |
+| Native recall | 81 | 58 | 58 |
+| Bundled readability-lxml | 0 | 202 | 202 |
+| Mozilla / DomDistiller / custom | 0 | 0 | 0 |
+| Internal baseline | 726 | 669 | 669 |
+| No result | 21 | 21 | 21 |
+| **External fallback total** | **0 / 6,554 (0%)** | **202 / 6,554 (3.082%)** | **202 / 6,554 (3.082%)** |
+
+Both production workers have a verified permanent false fallback setting and
+equal complete outputs on all 6,554 pages. Rust FAST tracing records zero external
+events. Non-FAST uses separately labelled, non-deployment library probes;
+plain/diagnostic outputs and Go/Rust final-source labels match on every page.
+Lxml ran on all 6,554 non-FAST inputs, but supplied final content on only 202;
+570 pages temporarily selected it before later recovery decisions. Native recall
+and baseline are not external fallback. No jusText implementation is claimed.
+
+Standalone Mozilla output, including noscript image recovery, is unchanged on
+all 6,554 inputs in both languages. Exactly 129 FAST bodies changed from the
+frozen previous workers, and each now matches Python FAST exactly. Go/Rust bodies
+match on all 6,533 nonempty results. Against Python FAST, 4,443/6,520 nonempty
+pairs match exactly, 6,306/6,520 (96.72%) after collapsing whitespace, and
+6,418/6,520 (98.44%) after removing all whitespace. That last metric can ignore
+word-boundary changes and is not exact agreement. Native workers return 21 empty
+results; Python returns 34. Empty pairs are not counted as matching text.
+
+These checks keep `RunDate` off: 18 preexisting Go empty-JSON failures from the
+separate all-flags date trial are not counted as successful comparisons or fixed
+here. Finite corpus agreement is not complete Python parity or accuracy.
+Published crates/module archives were checked against tagged runtime bytes and
+public checksums. Crate archives retain their immutable release-time README;
+fresh measurement tables are repository and GitHub release-note follow-ups.
+
+## Historical Results: 2026-09-28
 
 [go_rust_shared_performance_2026_09_28.json](go_rust_shared_performance_2026_09_28.json) records the **six-engine shared-input suite with Trafilatura fallback disabled**, rebuilt from the published tags, on all 2,659 development pages: 983 LegoNews, 181 ScrapingHub, and 1,495 WCXB pages. Two persistent workers each parse a page once and run their three engines serially, in the same randomized engine order; language order is balanced separately. The [September 23 report](go_rust_shared_performance_2026_09_23.json) and earlier JSON remain unchanged. Timings from separate runs are not pooled.
 
@@ -227,9 +343,9 @@ For the current six-engine shared-input comparison, use Python 3.11+, Git, Go 1.
 ```sh
 python -m pip install -r requirements-performance.txt
 python prepare.py
-python tools/build_split_rust.py --sources .. --candidate-only --candidate-ref v2.2.5 --output .cache/rust-split-releases
+python tools/build_split_rust.py --sources .. --candidate-only --candidate-ref v2.2.6 --output .cache/rust-split-releases
 python tools/build_split_suite.py --rust-config .cache/rust-split-releases/compare.json --output .cache/go-rust-split-releases
-python split_compare.py --config .cache/go-rust-split-releases/compare.json --comparison languages --output results/go-rust-split --runs 4 --warmups 1 --best-passes 4 --seed 20260928
+python split_compare.py --config .cache/go-rust-split-releases/compare.json --comparison languages --output results/go-rust-split --runs 4 --warmups 1 --best-passes 4 --seed 20260929
 ```
 
 [tools/build_split_suite.py](tools/build_split_suite.py) builds the unified Go worker, verifies its Readability/DomDistiller dependency commits against the release pins, and pairs it with the exact-tag Rust candidate after checking its binary, adapter, and dependency identities. Go's DomDistiller pseudo-version resolves to the v1.0.0 release commit. `--candidate-only` avoids building a historical Rust baseline. An existing verified Rust release config can be reused instead of rebuilding. Neither builder edits library sources or dependency locks.
@@ -246,21 +362,21 @@ without fastest-pass selection.
 After building the disabled-mode suite in this Windows checkout, reuse it with:
 
 ```powershell
-.\.cache\performance-env\Scripts\python.exe -B split_compare.py --config .cache/go-rust-split-20260928-disabled/compare.json --comparison languages --output results/my-go-rust-split --runs 4 --warmups 1 --best-passes 4 --seed 20260928
+.\.cache\performance-env\Scripts\python.exe -B split_compare.py --config .cache/release-2.2.6-suite-disabled/compare.json --comparison languages --output results/my-go-rust-split --runs 4 --warmups 1 --best-passes 4 --seed 20260929
 ```
 
 Pass explicit `--go`, `--git`, `--cargo`, or `--rustc` paths to the builders when needed. On Windows, the Rust builder defaults to the GNU toolchain; its MSYS2 UCRT64 linker/runtime directory must be on `PATH`. The runner requests Windows wakefulness by default, but this cannot prevent manual suspend. Keep the lid open and avoid concurrent heavy work during timing. No global power settings are changed.
 
 ### Historical Request-Latency Runner
 
-The standalone-executable workflow does **not** implement the current shared-input timing protocol. The registry now includes eight entries. To reproduce the original seven-executable configuration, use its retained `--config` or the [historical seven-entry source snapshot](https://github.com/markusmobius/content-extractor-benchmark/tree/d433ab637f0a56c0926aa3698f470794a553472f). Without an explicit selection, this command runs the current registry:
+The standalone-executable workflow does **not** implement the current shared-input timing protocol. The registry now includes nine entries. To reproduce the original seven-executable configuration, use its retained `--config` or the [historical seven-entry source snapshot](https://github.com/markusmobius/content-extractor-benchmark/tree/d433ab637f0a56c0926aa3698f470794a553472f). Without an explicit selection, this command runs the current registry:
 
 ```sh
 python -m pip install -r requirements-performance.txt
 python run_benchmark.py --runs 4 --best-passes 2
 ```
 
-[run_benchmark.py](run_benchmark.py) prepares missing corpus data, builds the pinned engines once in `.cache/releases`, then reuses those builds. The registry now has eight entries, including Go-Trafilatura 2.2.5; select the original seven or reuse their config to reproduce the historical battery. By default it runs every registry entry on all 2,659 development pages with one full warmup and **N=4 measured passes**. `--best-passes 2` reports the same two fastest complete passes for every engine, as in the table above; omitting the flag reports the average of all measured passes. Progress is printed throughout. Each invocation creates a new timestamped directory under `results/` containing only `quality_YYYY_MM_DD.json` and `performance_YYYY_MM_DD.json`; existing dated results are never overwritten. Raw predictions and page timings are audited and deleted, including on failure or Ctrl+C. Quality-only mode produces just the quality summary.
+[run_benchmark.py](run_benchmark.py) prepares missing corpus data, builds the pinned engines once in `.cache/releases`, then reuses those builds. The registry now has nine entries, including Go-Trafilatura 2.2.5 and 2.2.6; select the original seven or reuse their config to reproduce the historical battery. By default it runs every registry entry on all 2,659 development pages with one full warmup and **N=4 measured passes**. `--best-passes 2` reports the same two fastest complete passes for every engine, as in the table above; omitting the flag reports the average of all measured passes. Progress is printed throughout. Each invocation creates a new timestamped directory under `results/` containing only `quality_YYYY_MM_DD.json` and `performance_YYYY_MM_DD.json`; existing dated results are never overwritten. Raw predictions and page timings are audited and deleted, including on failure or Ctrl+C. Quality-only mode produces just the quality summary.
 
 If the historical seven-binary cache is retained, reuse its explicit configuration with the current Python environment:
 

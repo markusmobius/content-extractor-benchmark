@@ -1,0 +1,772 @@
+{
+  "application_checks": {
+    "allocators": [
+      "mimalloc",
+      "system"
+    ],
+    "live_go_file_tcp_tests": 4,
+    "portable_go_tests_vet": "passed",
+    "rust_protocol_tests_per_allocator": 2,
+    "rust_unit_tests_per_allocator": 22,
+    "strict_all_target_all_feature_clippy": "passed"
+  },
+  "application_corpus": {
+    "agreement": {
+      "comparisons": {
+        "go_fast_vs_python_fast": {
+          "exact": {
+            "matching_nonempty_pages": 4443,
+            "pct_all_pages": 67.79066219102837,
+            "pct_both_returned": 68.1441717791411
+          },
+          "non_whitespace_characters": {
+            "matching_nonempty_pages": 6418,
+            "pct_all_pages": 97.92493133963991,
+            "pct_both_returned": 98.43558282208589
+          },
+          "pages": 6554,
+          "statuses": {
+            "both_returned": 6520,
+            "first_only": 13,
+            "neither_returned": 21
+          },
+          "whitespace_normalized": {
+            "matching_nonempty_pages": 6306,
+            "pct_all_pages": 96.2160512664022,
+            "pct_both_returned": 96.71779141104294
+          }
+        },
+        "go_fast_vs_python_full": {
+          "exact": {
+            "matching_nonempty_pages": 4242,
+            "pct_all_pages": 64.72383277387854,
+            "pct_both_returned": 65.06134969325153
+          },
+          "non_whitespace_characters": {
+            "matching_nonempty_pages": 6207,
+            "pct_all_pages": 94.70552334452243,
+            "pct_both_returned": 95.19938650306749
+          },
+          "pages": 6554,
+          "statuses": {
+            "both_returned": 6520,
+            "first_only": 13,
+            "neither_returned": 21
+          },
+          "whitespace_normalized": {
+            "matching_nonempty_pages": 6095,
+            "pct_all_pages": 92.99664327128471,
+            "pct_both_returned": 93.48159509202453
+          }
+        },
+        "go_fast_vs_rust_fast": {
+          "exact": {
+            "matching_nonempty_pages": 6533,
+            "pct_all_pages": 99.67958498626793,
+            "pct_both_returned": 100.0
+          },
+          "non_whitespace_characters": {
+            "matching_nonempty_pages": 6533,
+            "pct_all_pages": 99.67958498626793,
+            "pct_both_returned": 100.0
+          },
+          "pages": 6554,
+          "statuses": {
+            "both_returned": 6533,
+            "neither_returned": 21
+          },
+          "whitespace_normalized": {
+            "matching_nonempty_pages": 6533,
+            "pct_all_pages": 99.67958498626793,
+            "pct_both_returned": 100.0
+          }
+        },
+        "python_fast_vs_python_full": {
+          "exact": {
+            "matching_nonempty_pages": 6279,
+            "pct_all_pages": 95.80408910588953,
+            "pct_both_returned": 96.3036809815951
+          },
+          "non_whitespace_characters": {
+            "matching_nonempty_pages": 6283,
+            "pct_all_pages": 95.86512053707659,
+            "pct_both_returned": 96.36503067484662
+          },
+          "pages": 6554,
+          "statuses": {
+            "both_returned": 6520,
+            "neither_returned": 34
+          },
+          "whitespace_normalized": {
+            "matching_nonempty_pages": 6282,
+            "pct_all_pages": 95.84986267927982,
+            "pct_both_returned": 96.34969325153374
+          }
+        },
+        "rust_fast_vs_python_fast": {
+          "exact": {
+            "matching_nonempty_pages": 4443,
+            "pct_all_pages": 67.79066219102837,
+            "pct_both_returned": 68.1441717791411
+          },
+          "non_whitespace_characters": {
+            "matching_nonempty_pages": 6418,
+            "pct_all_pages": 97.92493133963991,
+            "pct_both_returned": 98.43558282208589
+          },
+          "pages": 6554,
+          "statuses": {
+            "both_returned": 6520,
+            "first_only": 13,
+            "neither_returned": 21
+          },
+          "whitespace_normalized": {
+            "matching_nonempty_pages": 6306,
+            "pct_all_pages": 96.2160512664022,
+            "pct_both_returned": 96.71779141104294
+          }
+        },
+        "rust_fast_vs_python_full": {
+          "exact": {
+            "matching_nonempty_pages": 4242,
+            "pct_all_pages": 64.72383277387854,
+            "pct_both_returned": 65.06134969325153
+          },
+          "non_whitespace_characters": {
+            "matching_nonempty_pages": 6207,
+            "pct_all_pages": 94.70552334452243,
+            "pct_both_returned": 95.19938650306749
+          },
+          "pages": 6554,
+          "statuses": {
+            "both_returned": 6520,
+            "first_only": 13,
+            "neither_returned": 21
+          },
+          "whitespace_normalized": {
+            "matching_nonempty_pages": 6095,
+            "pct_all_pages": 92.99664327128471,
+            "pct_both_returned": 93.48159509202453
+          }
+        }
+      },
+      "outputs": {
+        "go_fast": {
+          "exceptions": 0,
+          "returned": 6533
+        },
+        "python_fast": {
+          "exceptions": 0,
+          "returned": 6520
+        },
+        "python_full": {
+          "exceptions": 0,
+          "returned": 6520
+        },
+        "rust_fast": {
+          "exceptions": 0,
+          "returned": 6533
+        }
+      },
+      "pages": 6554
+    },
+    "agreement_definition": "Python include_formatting=True matches the native workers, which always retain formatting. Main body only, rendered by the same routine: block-boundary newlines, inline text preserved, outer whitespace stripped. Exact compares that text; whitespace_normalized collapses Unicode whitespace runs. Non_whitespace_characters removes all Unicode whitespace, including missing/inserted spaces, so it can ignore changed word boundaries and is NOT exact agreement. Case, punctuation and character order are retained. No-result pairs are never text matches. This measures agreement, not accuracy or speed.",
+    "agreement_options": {
+      "deduplicate": false,
+      "favor_precision": false,
+      "favor_recall": false,
+      "include_comments": false,
+      "include_formatting": true,
+      "include_images": true,
+      "include_links": true,
+      "include_tables": true,
+      "only_with_metadata": false,
+      "output_format": "python",
+      "url": "https://www.example.com",
+      "with_metadata": true
+    },
+    "agreement_reference": {
+      "packages": [
+        {
+          "filename": "babel-2.18.0-py3-none-any.whl",
+          "installed_files": 1113,
+          "installed_files_sha256": "2afcdb54740d7cad1e81c94e8168b96ef852586d56d486e0e4044c1cb18f3162",
+          "name": "babel",
+          "sha256": "e2b422b277c2b9a9630c1d7903c2a00d0830c409c59ac8cae9081c92f1aeba35",
+          "uploaded_utc": "2026-02-01T12:30:53.445172Z",
+          "url": "https://files.pythonhosted.org/packages/77/f5/21d2de20e8b8b0408f0681956ca2c69f1320a3848ac50e6e7f39c6159675/babel-2.18.0-py3-none-any.whl",
+          "version": "2.18.0"
+        },
+        {
+          "filename": "certifi-2026.7.22-py3-none-any.whl",
+          "installed_files": 7,
+          "installed_files_sha256": "249bf2639dcddb3aae41129a0e25fd23a03e6ac0d0f48900eb5709f39da5c2fc",
+          "name": "certifi",
+          "sha256": "62f22742b58a1a33014a2b6b706588a8d7e2a88ae7bd1a6ebe8c992928483775",
+          "uploaded_utc": "2026-07-22T03:35:11.276376Z",
+          "url": "https://files.pythonhosted.org/packages/0b/a7/71ac2cff56fec219ed242bb11b8efb69fcc4bec75db06fb7bfe35de520e6/certifi-2026.7.22-py3-none-any.whl",
+          "version": "2026.7.22"
+        },
+        {
+          "filename": "charset_normalizer-3.5.1-cp314-cp314-win_amd64.whl",
+          "installed_files": 15,
+          "installed_files_sha256": "61207578117d322372bce958ada1a18561dc1c4b37f2178c48132cf8947aa45c",
+          "name": "charset-normalizer",
+          "sha256": "c658c50ac0c98cd755a2dd50b7977d3bca7df401dcc47fbdfa87db53ef7d4e8b",
+          "uploaded_utc": "2026-08-15T08:18:33.466489Z",
+          "url": "https://files.pythonhosted.org/packages/7a/7c/4938c329b6a9d446f6a59aa2092ff7118f274209b5ed0e26893d1d30a63c/charset_normalizer-3.5.1-cp314-cp314-win_amd64.whl",
+          "version": "3.5.1"
+        },
+        {
+          "filename": "courlan-1.4.0-py3-none-any.whl",
+          "installed_files": 12,
+          "installed_files_sha256": "65f714b8013fe596465c0f9f27634fc20b172973b5af073cd13c5d722a99a274",
+          "name": "courlan",
+          "sha256": "ad1dbdefd912ca7238d4607dc855df5df097f56bac175dd662c84eed3802f49e",
+          "uploaded_utc": "2026-06-01T17:30:14.984514Z",
+          "url": "https://files.pythonhosted.org/packages/1f/38/ce65091ff20a16e06d17418c4353af5f56d3190821b1a06983c79ae79274/courlan-1.4.0-py3-none-any.whl",
+          "version": "1.4.0"
+        },
+        {
+          "filename": "dateparser-1.4.3-py3-none-any.whl",
+          "installed_files": 252,
+          "installed_files_sha256": "66e91f1c0f9ed26d244adda4414357a46210995de4244864f4e38f903bc63e7b",
+          "name": "dateparser",
+          "sha256": "cbce86c64e0cea5c54c84c015d34c903d46c51bfad50632bf2f05a6141d10c05",
+          "uploaded_utc": "2026-09-03T10:07:52.913788Z",
+          "url": "https://files.pythonhosted.org/packages/30/5f/63f927b5ffd1cc2c030fc2bd362bf920890e8806cf42f701198de5b3f9c7/dateparser-1.4.3-py3-none-any.whl",
+          "version": "1.4.3"
+        },
+        {
+          "filename": "htmldate-1.10.0-py3-none-any.whl",
+          "installed_files": 9,
+          "installed_files_sha256": "7795a490230aacce8b2c584f9acec91a7e2293bcab026c588b4a75bcb3f2dd4c",
+          "name": "htmldate",
+          "sha256": "9211dae35ab94147c8ed9e5fc2c9287a5cf31d2394cb7857e7f5dd814eb2aad6",
+          "uploaded_utc": "2026-06-01T17:43:51.797534Z",
+          "url": "https://files.pythonhosted.org/packages/f7/17/d3356233c826c641f940983d9479eab27faec59d49f4070bc58e80fcc021/htmldate-1.10.0-py3-none-any.whl",
+          "version": "1.10.0"
+        },
+        {
+          "filename": "justext-3.0.2-py2.py3-none-any.whl",
+          "installed_files": 106,
+          "installed_files_sha256": "0b5742c5356bd2b12c705a5f4171878f0c252fe595b8a3df5cc69840d09defc4",
+          "name": "jusText",
+          "sha256": "62b1c562b15c3c6265e121cc070874243a443bfd53060e869393f09d6b6cc9a7",
+          "uploaded_utc": "2025-02-25T20:21:44.179095Z",
+          "url": "https://files.pythonhosted.org/packages/f2/ac/52f4e86d1924a7fc05af3aeb34488570eccc39b4af90530dd6acecdf16b5/justext-3.0.2-py2.py3-none-any.whl",
+          "version": "3.0.2"
+        },
+        {
+          "filename": "lxml-6.1.3-cp314-cp314-win_amd64.whl",
+          "installed_files": 172,
+          "installed_files_sha256": "52656939ceae96e360d132993854426683161b9f183175f9db0f9cf15be0bc61",
+          "name": "lxml",
+          "sha256": "66299564c046bc7e0cc5de5106601eae907e9fa5904cd68a323380a8502f7861",
+          "uploaded_utc": "2026-09-02T14:50:26.348572Z",
+          "url": "https://files.pythonhosted.org/packages/0f/bc/5811cc73cac05e324e05ba9b0924e1a163a317a167ede8a9c748b11db30a/lxml-6.1.3-cp314-cp314-win_amd64.whl",
+          "version": "6.1.3"
+        },
+        {
+          "filename": "lxml_html_clean-0.4.5-py3-none-any.whl",
+          "installed_files": 5,
+          "installed_files_sha256": "7793818625160628af0bd4bea108e41f5b327c17677531aaee878fd6422db55d",
+          "name": "lxml_html_clean",
+          "sha256": "c76fcadd1e5bfb9b8bafc2200d51e4e78eb0dad67f56881c21dfb6484c7e7746",
+          "uploaded_utc": "2026-05-20T12:17:52.215336Z",
+          "url": "https://files.pythonhosted.org/packages/6a/bd/6e2b76a6c5dee10397db9c929f0c5066766ec1036046f0335b7ca7ca08b8/lxml_html_clean-0.4.5-py3-none-any.whl",
+          "version": "0.4.5"
+        },
+        {
+          "filename": "python_dateutil-2.9.0.post0-py2.py3-none-any.whl",
+          "installed_files": 19,
+          "installed_files_sha256": "be6e477198e2cfee93a6a40f0065ab0ff2a991477dd86dc1beaf40e8af4905cc",
+          "name": "python-dateutil",
+          "sha256": "a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427",
+          "uploaded_utc": "2024-03-01T18:36:18.570437Z",
+          "url": "https://files.pythonhosted.org/packages/ec/57/56b9bcc3c9c6a792fcbaf139543cee77261f3651ca9da0c93f5c1221264b/python_dateutil-2.9.0.post0-py2.py3-none-any.whl",
+          "version": "2.9.0.post0"
+        },
+        {
+          "filename": "pytz-2026.3.post1-py2.py3-none-any.whl",
+          "installed_files": 610,
+          "installed_files_sha256": "02cbfcfc93995aea02bf2aacf1ee4ad0ec26fd4c8814aaa7a2a1753bc51420b8",
+          "name": "pytz",
+          "sha256": "dd95840dd199baea12d9cc096a1d452caa6596a1c1e4b5f3dbd1541855d5e815",
+          "uploaded_utc": "2026-07-25T15:12:05.782880Z",
+          "url": "https://files.pythonhosted.org/packages/0f/7b/39c34ca613b0b198cb866466651b26b045e2009864c5183c979a3b83f383/pytz-2026.3.post1-py2.py3-none-any.whl",
+          "version": "2026.3.post1"
+        },
+        {
+          "filename": "regex-2026.9.10-cp314-cp314-win_amd64.whl",
+          "installed_files": 5,
+          "installed_files_sha256": "0549b42b8b145105d0b4ae4b8733364a097af37299e99bc2fdc60375458056d1",
+          "name": "regex",
+          "sha256": "c32818b28bcd153b25b63038348a9fe9b9fbcddb60df43f204c3ab55eeb57f77",
+          "uploaded_utc": "2026-09-09T20:58:30.899398Z",
+          "url": "https://files.pythonhosted.org/packages/c1/38/40a93e72703a741235115ed1b1e5f6b869917677b7643005034ce1611d70/regex-2026.9.10-cp314-cp314-win_amd64.whl",
+          "version": "2026.9.10"
+        },
+        {
+          "filename": "six-1.17.0-py2.py3-none-any.whl",
+          "installed_files": 1,
+          "installed_files_sha256": "efb7f36856e4e919aae2fb582876f1687727b6542cc963fe4ec65441821e0e53",
+          "name": "six",
+          "sha256": "4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274",
+          "uploaded_utc": "2024-12-04T17:35:26.475808Z",
+          "url": "https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl",
+          "version": "1.17.0"
+        },
+        {
+          "filename": "tld-0.13.2-py2.py3-none-any.whl",
+          "installed_files": 19,
+          "installed_files_sha256": "183f87f5429283d2e7660720807dcbac791a7e01e21b75ece11fa4a42f484953",
+          "name": "tld",
+          "sha256": "9b8fdbdb880e7ba65b216a4937f2c94c49a7226723783d5838fc958ac76f4e0c",
+          "uploaded_utc": "2026-03-06T23:50:32.465144Z",
+          "url": "https://files.pythonhosted.org/packages/9e/90/39a85a4b63c84213e78b3c17d22e1bf45328acf8ebb33ef93be30d0a3911/tld-0.13.2-py2.py3-none-any.whl",
+          "version": "0.13.2"
+        },
+        {
+          "filename": "trafilatura-2.2.0-py3-none-any.whl",
+          "installed_files": 24,
+          "installed_files_sha256": "e227a9e095b19cb8afb021f0c1a0ba6f683925c7f2481361fd2486a827ff0969",
+          "name": "trafilatura",
+          "sha256": "ac43592a6201264dfc4f9c361cbe3eb3fea96e54437010a159d5e7365360ed98",
+          "uploaded_utc": "2026-07-31T16:06:46.485525Z",
+          "url": "https://files.pythonhosted.org/packages/c3/01/af18878398102a5a5afa0811f4f8f2a8a94a60cc16e8e9cf54bc95f96808/trafilatura-2.2.0-py3-none-any.whl",
+          "version": "2.2.0"
+        },
+        {
+          "filename": "tzdata-2026.4-py2.py3-none-any.whl",
+          "installed_files": 627,
+          "installed_files_sha256": "75808875d0723ddc1e922cf60828eedeaa621318f36045f8050a71eb7c497629",
+          "name": "tzdata",
+          "sha256": "c2169a8b0a7a5e9674da5a135ccdfb2b3e671b333ed9fed17b41f73c34476e81",
+          "uploaded_utc": "2026-09-12T12:56:01.670969Z",
+          "url": "https://files.pythonhosted.org/packages/f9/bc/8737e8d54cf51106118039b83f485a4783112fab49ea9d044b234978a46e/tzdata-2026.4-py2.py3-none-any.whl",
+          "version": "2026.4"
+        },
+        {
+          "filename": "tzlocal-5.4.4-py3-none-any.whl",
+          "installed_files": 6,
+          "installed_files_sha256": "9e0da92871d815d11a3d3ebe086738b7bc776539ba285d0c95b61c6719cd8f24",
+          "name": "tzlocal",
+          "sha256": "aae09f0126a8a86fa736be266eb4a471380d26a0de3bc14844e7821fee3e2a15",
+          "uploaded_utc": "2026-06-29T08:03:38.666573Z",
+          "url": "https://files.pythonhosted.org/packages/9e/a4/017a7a6cbe387d961a688ec31364ae60a5c4e22c96ae9921b79a947c855d/tzlocal-5.4.4-py3-none-any.whl",
+          "version": "5.4.4"
+        },
+        {
+          "filename": "urllib3-2.8.0-py3-none-any.whl",
+          "installed_files": 38,
+          "installed_files_sha256": "1e52f3c86ba61d9a45fbf5f53923367a0a2986aeaea42035cf8b511ddbb21b92",
+          "name": "urllib3",
+          "sha256": "0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3",
+          "uploaded_utc": "2026-09-15T19:29:34.577402Z",
+          "url": "https://files.pythonhosted.org/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl",
+          "version": "2.8.0"
+        }
+      ],
+      "verified_utc": "2026-09-28T01:54:59.789126+00:00",
+      "wheel_receipt_sha256": "82debb23ea1cba3e5a06fb052ac1c82116fd1d1c3347db245058092562b0d870"
+    },
+    "annotated": false,
+    "corpus_sha256": "a31d730aedd2f425e9cd727c670366aa8b417a5f7840344511e3206e9c082445",
+    "date_caveat": "The separate pre-release all-flags trial had 18 existing Go empty-JSON failures when RunDate was enabled; not counted as matches here or repaired in this release.",
+    "dates_enabled": false,
+    "fast_evidence_scope": "Rust plain/diagnostic complete outputs equal on all pages with zero external events; Go/Rust complete FAST outputs equal, and both frozen source receipts verify an unchanged explicit false fallback option.",
+    "fast_external_fraction": 0,
+    "fast_external_pages": 0,
+    "fast_source_trace": {
+      "additional_extractor_runs": {
+        "distiller": {
+          "events": 0,
+          "pages": 0
+        },
+        "readability": {
+          "events": 0,
+          "pages": 0
+        }
+      },
+      "any_additional_extraction": {
+        "events": 0,
+        "pages": 0
+      },
+      "baseline_selected": {
+        "events": 770,
+        "pages": 770
+      },
+      "candidate_considered": {
+        "events": 0,
+        "pages": 0
+      },
+      "candidate_selected": {
+        "events": 0,
+        "pages": 0
+      },
+      "comparisons": {
+        "events": 0,
+        "pages": 0
+      },
+      "distiller_rescue_selected": {
+        "events": 0,
+        "pages": 0
+      },
+      "failed_readability_reuse": {
+        "events": 0,
+        "pages": 0
+      },
+      "final_fallback_origins": {},
+      "final_fallback_pages": 0,
+      "final_sources": {
+        "baseline": 726,
+        "error": 21,
+        "native": 5726,
+        "native_recall": 81
+      },
+      "forum_appended_pages": 0,
+      "pages": 6554,
+      "recall_attempted": {
+        "events": 1800,
+        "pages": 1800
+      },
+      "recall_selected": {
+        "events": 81,
+        "pages": 81
+      },
+      "returned_pages": 6533,
+      "selected_candidates": {
+        "custom": {
+          "events": 0,
+          "pages": 0
+        },
+        "distiller": {
+          "events": 0,
+          "pages": 0
+        },
+        "readability": {
+          "events": 0,
+          "pages": 0
+        }
+      }
+    },
+    "nonfast_library_only": {
+      "complete_go_rust_output_and_source_matches": 6554,
+      "deployment_worker": false,
+      "external_fraction": 0.030820872749465975,
+      "external_pages": 202,
+      "only_external_engine": "bundled readability-lxml",
+      "plain_diagnostic_matches_each_language": 6554,
+      "sources_each_language": {
+        "baseline": 669,
+        "error": 21,
+        "native": 5604,
+        "native_recall": 58,
+        "readability": 202
+      },
+      "summary_each_language": {
+        "additional_extractor_runs": {
+          "distiller": {
+            "events": 0,
+            "pages": 0
+          },
+          "readability": {
+            "events": 8394,
+            "pages": 6554
+          }
+        },
+        "any_additional_extraction": {
+          "events": 8394,
+          "pages": 6554
+        },
+        "baseline_selected": {
+          "events": 701,
+          "pages": 701
+        },
+        "candidate_considered": {
+          "events": 8394,
+          "pages": 6554
+        },
+        "candidate_selected": {
+          "events": 580,
+          "pages": 570
+        },
+        "comparisons": {
+          "events": 8410,
+          "pages": 6554
+        },
+        "distiller_rescue_selected": {
+          "events": 0,
+          "pages": 0
+        },
+        "failed_readability_reuse": {
+          "events": 0,
+          "pages": 0
+        },
+        "final_fallback_origins": {
+          "generated": 202
+        },
+        "final_fallback_pages": 202,
+        "final_sources": {
+          "baseline": 669,
+          "error": 21,
+          "native": 5604,
+          "native_recall": 58,
+          "readability": 202
+        },
+        "forum_appended_pages": 0,
+        "pages": 6554,
+        "recall_attempted": {
+          "events": 1856,
+          "pages": 1856
+        },
+        "recall_selected": {
+          "events": 65,
+          "pages": 65
+        },
+        "returned_pages": 6533,
+        "selected_candidates": {
+          "custom": {
+            "events": 0,
+            "pages": 0
+          },
+          "distiller": {
+            "events": 0,
+            "pages": 0
+          },
+          "readability": {
+            "events": 580,
+            "pages": 570
+          }
+        }
+      },
+      "supplied_candidates": false
+    },
+    "noscript_correction": {
+      "all_changed_now_exact_python_fast": true,
+      "changed_fast_bodies": 129,
+      "changed_names": [
+        "cosmos_0.html",
+        "cosmos_106.html",
+        "cosmos_1080.html",
+        "cosmos_1087.html",
+        "cosmos_1121.html",
+        "cosmos_1169.html",
+        "cosmos_1180.html",
+        "cosmos_1230.html",
+        "cosmos_1243.html",
+        "cosmos_1278.html",
+        "cosmos_1324.html",
+        "cosmos_1353.html",
+        "cosmos_1382.html",
+        "cosmos_1444.html",
+        "cosmos_1445.html",
+        "cosmos_1516.html",
+        "cosmos_1525.html",
+        "cosmos_1566.html",
+        "cosmos_1613.html",
+        "cosmos_1680.html",
+        "cosmos_1711.html",
+        "cosmos_1721.html",
+        "cosmos_1896.html",
+        "cosmos_1899.html",
+        "cosmos_1912.html",
+        "cosmos_195.html",
+        "cosmos_2056.html",
+        "cosmos_2119.html",
+        "cosmos_2120.html",
+        "cosmos_2156.html",
+        "cosmos_2351.html",
+        "cosmos_2393.html",
+        "cosmos_2401.html",
+        "cosmos_2425.html",
+        "cosmos_252.html",
+        "cosmos_253.html",
+        "cosmos_2576.html",
+        "cosmos_2632.html",
+        "cosmos_2710.html",
+        "cosmos_2762.html",
+        "cosmos_2777.html",
+        "cosmos_2781.html",
+        "cosmos_2801.html",
+        "cosmos_2826.html",
+        "cosmos_2865.html",
+        "cosmos_2870.html",
+        "cosmos_2874.html",
+        "cosmos_297.html",
+        "cosmos_3008.html",
+        "cosmos_3009.html",
+        "cosmos_3013.html",
+        "cosmos_3079.html",
+        "cosmos_3164.html",
+        "cosmos_3168.html",
+        "cosmos_3169.html",
+        "cosmos_3217.html",
+        "cosmos_323.html",
+        "cosmos_3250.html",
+        "cosmos_3324.html",
+        "cosmos_3349.html",
+        "cosmos_3433.html",
+        "cosmos_3545.html",
+        "cosmos_3583.html",
+        "cosmos_3617.html",
+        "cosmos_3621.html",
+        "cosmos_3721.html",
+        "cosmos_3734.html",
+        "cosmos_3741.html",
+        "cosmos_383.html",
+        "cosmos_3854.html",
+        "cosmos_3923.html",
+        "cosmos_3965.html",
+        "cosmos_4109.html",
+        "cosmos_4135.html",
+        "cosmos_4191.html",
+        "cosmos_4289.html",
+        "cosmos_4295.html",
+        "cosmos_4432.html",
+        "cosmos_4486.html",
+        "cosmos_4532.html",
+        "cosmos_4566.html",
+        "cosmos_4772.html",
+        "cosmos_4818.html",
+        "cosmos_4849.html",
+        "cosmos_4921.html",
+        "cosmos_5011.html",
+        "cosmos_5029.html",
+        "cosmos_5095.html",
+        "cosmos_5121.html",
+        "cosmos_5139.html",
+        "cosmos_5147.html",
+        "cosmos_5257.html",
+        "cosmos_5264.html",
+        "cosmos_5341.html",
+        "cosmos_5349.html",
+        "cosmos_5464.html",
+        "cosmos_5484.html",
+        "cosmos_5489.html",
+        "cosmos_5548.html",
+        "cosmos_555.html",
+        "cosmos_5583.html",
+        "cosmos_5695.html",
+        "cosmos_5700.html",
+        "cosmos_571.html",
+        "cosmos_5739.html",
+        "cosmos_5861.html",
+        "cosmos_5876.html",
+        "cosmos_5990.html",
+        "cosmos_6024.html",
+        "cosmos_6065.html",
+        "cosmos_6066.html",
+        "cosmos_6096.html",
+        "cosmos_6177.html",
+        "cosmos_621.html",
+        "cosmos_6295.html",
+        "cosmos_630.html",
+        "cosmos_6402.html",
+        "cosmos_6412.html",
+        "cosmos_6438.html",
+        "cosmos_65.html",
+        "cosmos_693.html",
+        "cosmos_709.html",
+        "cosmos_723.html",
+        "cosmos_729.html",
+        "cosmos_745.html",
+        "cosmos_75.html",
+        "cosmos_781.html",
+        "cosmos_795.html",
+        "cosmos_839.html"
+      ],
+      "current_report_sha256": "087a72b44ec53e300a6d0a05c05175bc09ee75d0b3a8e0bf52b8d1845770b9a3",
+      "old_report_sha256": "df072ec89755c5342f1a7e3aa53561bf258b300e1fc2d31ab62c193b31099e39",
+      "pages": 6554,
+      "unchanged_python_bodies": 6554
+    },
+    "pages": 6554,
+    "policy": "Both production workers always FAST; standalone Mozilla unchanged; legacy DomDistiller section inert.",
+    "source_reports_sha256": {
+      "agreement": "087a72b44ec53e300a6d0a05c05175bc09ee75d0b3a8e0bf52b8d1845770b9a3",
+      "fast_trace": "645a52f091f26172ac26048c3612010b829c3a79ebfc9b73dfe81cb5896af2af",
+      "go_lxml": "a80d6b6d23fc4059436a98cbc1a2416c867b6216ba5baa01d2796b7a58d0a2ba",
+      "packages": "b57522283fcb99b72075da63a737689489f414204d5b2c78b52573232c5194d4",
+      "rust_lxml": "27044e7077fdd4df6d8dd7df9c0b3837fc73907500216f1617a3ce0c1f617429",
+      "workers": "71dfefefece9f6e83d699836a68fd0bc3f40d789dbce2a6027e5ab5ccb28ecfb"
+    },
+    "worker_checks": {
+      "complete_go_rust_equal": 6554,
+      "pages": 6554,
+      "standalone_flags_independent": 6554,
+      "standalone_unchanged_each_language": 6554
+    }
+  },
+  "date": "2026-09-29",
+  "kind": "release-validation",
+  "library_checks": {
+    "go_trafilatura": {
+      "caveat": "Strict reviewed-difference gate passes; ordinary go test reports four explicitly retained Python fallback differences.",
+      "compatibility_checker_tests": 9,
+      "native_inventory_mappings": 56,
+      "passed": 7370,
+      "reviewed_failures": 4,
+      "skipped": 43,
+      "vet_build_format_tidy": "passed"
+    },
+    "rust_readability": {
+      "existing_defaults": "unchanged",
+      "html_parser_cases": 1793,
+      "release_tests_including_optional": 60,
+      "saved_extraction_pages": 133,
+      "strict_all_feature_clippy": "passed"
+    },
+    "rust_trafilatura": {
+      "both_allocators": true,
+      "doc": 1,
+      "ordinary_ignored": 2,
+      "ordinary_library": 55,
+      "release_library_including_optional": 57,
+      "strict_all_feature_clippy": "passed",
+      "worker": 5
+    }
+  },
+  "package_verification": [
+    {
+      "checksum": "a01e9c0a180976b337fd432fa8f52a461325ec92d8ca38ef588678724bf4fa7a",
+      "commit": "fb314e7b3f9a363c9852c3dda200f391ef2f98f0",
+      "package": "rust-readability-v2",
+      "source_files_compared_count": 36,
+      "vcs_clean": true,
+      "version": "0.6.5"
+    },
+    {
+      "checksum": "b76bce941c9ac3c876455a92d7982af5d2aca7b493dbdbf1898714a84acc74e4",
+      "commit": "8c002162bb2ba9b2703e13144bfafb2cb35c3452",
+      "package": "rust-trafilatura",
+      "source_files_compared_count": 29,
+      "vcs_clean": true,
+      "version": "2.2.6"
+    },
+    {
+      "commit": "a3d4a68e0d50346b32b4f89f0a9573a06258d301",
+      "go_mod_sum": "h1:JxKFFAXlV2n/nr5L+ZZnErwSBgVcnpTI3CjbIUMJuXM=",
+      "package": "github.com/markusmobius/go-trafilatura/v2",
+      "source_files_compared_count": 64,
+      "sum": "h1:nYeh6ht4MuzTf2j5q9HnFbokjGgkYyZiI1CxcKpgfg0=",
+      "version": "v2.2.6",
+      "zip_sha256": "b397d19dc6d836e9c9b08481e0d83b696f7f2c9ac334dc313cbf450225c840ae"
+    }
+  ],
+  "releases": {
+    "go-trafilatura": "2.2.6",
+    "rust-readability-v2": "0.6.5",
+    "rust-trafilatura": "2.2.6"
+  },
+  "reproduction_sha256": {
+    "build_probes.py": "345467a40bf508e43bc43b510cd0993a98e30d63e2390caeababff51c16df30c",
+    "export_validation.py": "a2b2bd81b52d92cac42371cfa5c49879f49e1fe21038565590efcfa41e3d4437",
+    "publish_benchmark.py": "5b039c76093ab75cf09aa51ea0ef7eb9eda42db0be48aa9b7dd4b37129050706",
+    "qualify_workers.py": "94f6aca012840da1c95c6247593853e43fca69eac9143aca7960cc32c9ffbe7b",
+    "verify_release.py": "ddf0f46707f018fe5980650f12d1edaf127151d201c670af10f4a6653f32c44f"
+  },
+  "schema_version": 1,
+  "scope": "Final returned source, not extractor calls or accuracy. Native recall and baseline are not external fallback. Non-FAST probes are isolated copies, not production workers. Agreement and the 2659-page annotated benchmark remain separate. Crate archives are immutable release-time artifacts; later benchmark docs are repository/release-note updates."
+}
