@@ -1,0 +1,169 @@
+{
+  "annotated_library_benchmarks_unchanged": {
+    "go_rust_lxml_performance_2026_09_29.json": "688616f464d1a63b666f31df010ddad652c753ce8cee5996f8e954b4d20509b2",
+    "go_rust_shared_performance_2026_09_29.json": "382f869ae8f91c493c2c623c90a42a574f711ea584aead27387e907f3a24c523"
+  },
+  "checks": {
+    "allocators": [
+      "mimalloc",
+      "system"
+    ],
+    "portable_go_tests_vet": "passed",
+    "runtime_platforms": {
+      "linux": {
+        "architecture": "amd64",
+        "file_responses_equal": 215,
+        "standalone_protocol_flag_combinations": 16,
+        "tcp_responses_equal": 219,
+        "test_log_sha256": "516571a82a06fd515a4a1772e7916865d8409ecd2832e6932e0295d065d15bc8",
+        "tests_passed": 5
+      },
+      "windows": {
+        "architecture": "amd64",
+        "file_responses_equal": 215,
+        "standalone_protocol_flag_combinations": 16,
+        "tcp_responses_equal": 219,
+        "test_log_sha256": "20728d29f9f4682f13528996c9a1d6c3d34eec19a5ad7f92595a9a00928edb5f",
+        "tests_passed": 5
+      }
+    },
+    "rust_unit_tests_per_allocator": 23,
+    "strict_all_target_all_feature_clippy": "passed"
+  },
+  "comparison": "Restored DomDistiller outputs compared with each language's independently frozen pre-removal native worker. Replacing only the current DomDistiller field with the old empty value reproduces every prior complete response hash; all other sections are unchanged. Trafilatura-only versus combined results are also equal in both languages.",
+  "complete": true,
+  "corpus": {
+    "sha256": "a31d730aedd2f425e9cd727c670366aa8b417a5f7840344511e3206e9c082445"
+  },
+  "correction": "Removing standalone DomDistiller was an implementation error, not a requirement. Both goHTML/rustHTML honor RunDistiller, SkipPagination and Verbose independently of FAST Trafilatura. Neither standalone engine supplies fallback candidates.",
+  "date": "2026-09-29",
+  "date_caveat": "The 18 preexisting Go date-enabled empty-JSON failures are outside this corpus qualification, not fixed or counted as matches.",
+  "dates_enabled": false,
+  "deployment": {
+    "artifacts": [
+      {
+        "bytes": 29125210,
+        "path": "GoLang/deploy/goHTML/goHTML_amd64",
+        "sha256": "86e3eb5fdf1be1293b8080d07a417401e759dbad0317d49263438f215c860130"
+      },
+      {
+        "bytes": 27814125,
+        "path": "GoLang/deploy/goHTML/goHTML_arm64",
+        "sha256": "1911ca7a9987a26938a01b1b97d22fb20d0e812b7cdc7faaee48e52074a9bbba"
+      },
+      {
+        "bytes": 29581824,
+        "path": "GoLang/deploy/goHTML/goHTML_amd64.exe",
+        "sha256": "6737f261c23e5caef416b8df235b30985494b0038b3119869ee2493366525939"
+      },
+      {
+        "bytes": 28055552,
+        "path": "GoLang/deploy/goHTML/goHTML_arm64.exe",
+        "sha256": "6a99ba1b579a2a0dcba168b363b51f6278c6b109daadd090ee0ebd11bcf1e4c2"
+      },
+      {
+        "bytes": 29623792,
+        "path": "GoLang/deploy/goHTML/goHTML_amd64mac",
+        "sha256": "98eb3f7458c06598521bd45842f5dcd150e5ed8b494da816f18db9f5caf5e4fd"
+      },
+      {
+        "bytes": 28514850,
+        "path": "GoLang/deploy/goHTML/goHTML_arm64mac",
+        "sha256": "ffedbe2bfb48693e382f892eae9ec7e695f62fba784f9ea39cd4d9a030feaa4f"
+      },
+      {
+        "bytes": 26549848,
+        "path": "Rust/deploy/rustHTML/rustHTML_amd64",
+        "sha256": "fd3a170398203ae557a5b6fb19191df9ea539005387d3c3b8e62fc30ddccd3f7"
+      },
+      {
+        "bytes": 25919144,
+        "path": "Rust/deploy/rustHTML/rustHTML_arm64",
+        "sha256": "3ba1718ac16eaf20999a0fcb76ded2cad553a576b41aafac02a857b1375580d8"
+      },
+      {
+        "bytes": 31770112,
+        "path": "Rust/deploy/rustHTML/rustHTML_amd64.exe",
+        "sha256": "5e64c0bdd81c1878df7feb35565d5c50998d372b0f43e00ef978ce60a5a08fe5"
+      },
+      {
+        "bytes": 31061504,
+        "path": "Rust/deploy/rustHTML/rustHTML_arm64.exe",
+        "sha256": "1cb7d7c8826f3f7c3b5d0f3dbfbc2c0c475b1087247baa94572b60d02d154cf2"
+      },
+      {
+        "bytes": 29613384,
+        "path": "Rust/deploy/rustHTML/rustHTML_amd64mac",
+        "sha256": "4d6b792beab7578a88743d4a227db8382f4fa6f05559481b35867a60857c3c61"
+      },
+      {
+        "bytes": 29483104,
+        "path": "Rust/deploy/rustHTML/rustHTML_arm64mac",
+        "sha256": "b184632439b5b06a6c19908894ec09ec9bdb7a8bd796b248807f4311eceb9da4"
+      }
+    ],
+    "build_only_platforms": [
+      "linux/arm64",
+      "windows/arm64",
+      "darwin/amd64",
+      "darwin/arm64"
+    ],
+    "runtime_binary_sha256": {
+      "go": "6737f261c23e5caef416b8df235b30985494b0038b3119869ee2493366525939",
+      "old_go": "3eb129c00c4007a2fffaf7614d03d2276a97c6b27d942036dee08492fcfa17e1",
+      "old_rust": "9eab4f682c49210f8aee438ff5a70fb1a8bdad5ecff1752cb568614bcb7e8000",
+      "rust": "5e64c0bdd81c1878df7feb35565d5c50998d372b0f43e00ef978ce60a5a08fe5"
+    },
+    "signing_notarization": "not performed",
+    "source_sha256": {
+      "GoLang/build-goHTML.ps1": "45c9865c08d52c844686a0f4d9bfb5cf0b2ae2006db079084c6377848a9decb6",
+      "GoLang/src/cmd/goHTML/htmlProcessor.go": "703c21a22c7b225e8a933c56c6e811b6893c1502e1b7a400d24fea93ecbd612e",
+      "GoLang/src/cmd/goHTML/htmlProcessor_test.go": "b9c1d18e9d667b37388f887906831cd751498ad8e3a0a49ddd7f85759d4eaf34",
+      "GoLang/src/go.mod": "4abde968f9c5ce672f384770b7d60c03e5d5c24b7426a1a935aaf8482d7c6179",
+      "GoLang/src/go.sum": "08b0d7e6608cf8ff38a66614c2b9d359a1135b62b1f4b3378d440696949615ad",
+      "GoLang/src/lib/distiller/distillerProcessor.go": "2e0c1b4380a4e6c9800a2f451fcd963ef6581c5e952428793beba55bacc9cb96",
+      "GoLang/src/lib/distiller/trafilaturaProcessor.go": "8eb49f58f697c4b355479e819957c8deb499114a6096223bf9dcaf5a3d442bf4",
+      "Rust/Cargo.lock": "8b491157e2126f6173cda91a64117e602698458f2533abe3789eb44f41b09ffd",
+      "Rust/Cargo.toml": "b9baff9c1e7b6eac0b89f0a788365ef4de8e1971cfa36fd40cef030aa3012269",
+      "Rust/build-rustHTML.ps1": "1ce87be0bf6c79c232921cbe4ba55617dbc7fdff916aea45fc3c2e045039e975",
+      "Rust/src/processor.rs": "ceacfd47f25661596c0c65e6107a1d87696fe706712059ea75b2cd1b4c8e9dd5",
+      "Rust/tests/worker.rs": "83730556cf00e70ed12f99b62d96beb374c441bcfda28ca050dd7068b0bdeeca"
+    }
+  },
+  "evidence_sha256": {
+    "controller": "ffa980a8eaad3145dfac6c7ef8787f36cd33839a7a3d31416661b62e36fe9561",
+    "deployment_builds": "875738b89d8d2888f7695ea43ce0daa1581b6ea768e5cd0bfed8677938593f62",
+    "exporter": "2fc26ee5d629baaddf83034937e0727823a841a06855aef3759bf8fdafeeab56",
+    "full_worker_report": "09888a91819a4f39b8935c82ef6bd0fee193a9b32730cbb33369e48cfc1b07d1",
+    "prior_public_validation": "f428f7372f7e22c124d7eb708a195ec0100a11be0a542334b7dd9b73598bf81a",
+    "prior_worker_report": "71dfefefece9f6e83d699836a68fd0bc3f40d789dbce2a6027e5ab5ccb28ecfb"
+  },
+  "kind": "standalone-domdistiller-worker-correction",
+  "retention": "Earlier reports describe the mistakenly-disabled standalone worker and remain unchanged. This correction supersedes their policy statement and deployment identities. Library benchmark adapters already ran standalone DomDistiller; their quality, timing and fallback reports remain unchanged. This follow-up is not a new speed or accuracy benchmark. No library sources, package versions or release tags changed.",
+  "schema_version": 1,
+  "summary": {
+    "complete_go_rust_equal": 6554,
+    "nonempty_domdistiller_pages_each_language": 6169,
+    "other_sections_unchanged_each_language": 6554,
+    "pages": 6554,
+    "standalone_distiller_unchanged_each_language": 6554,
+    "trafilatura_flag_independent_each_language": 6554
+  },
+  "trafilatura_fallback": {
+    "production_fast": "Always; zero external fallback",
+    "scope": "These rates concern Trafilatura, not separately requested standalone DomDistiller or Mozilla.",
+    "unchanged_nonfast_library_only_rate": {
+      "fraction": 0.030820872749465975,
+      "inputs": 6554,
+      "only_engine": "bundled readability-lxml",
+      "pages": 202
+    }
+  },
+  "versions": {
+    "go_domdistiller": "1.0.0",
+    "go_trafilatura": "2.2.6",
+    "rust_domdistiller": "1.0.1",
+    "rust_readability": "0.6.5",
+    "rust_trafilatura": "2.2.6"
+  }
+}

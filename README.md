@@ -90,8 +90,8 @@ necessarily one parse. No rendered HTML is reparsed. Extraction includes working
 copies, native metadata and text rendering. File reads, startup, IPC and scoring
 are excluded; Go GC work may cross stage boundaries. Comments and pagination are
 off, tables are on, and no extracted candidates are supplied to Trafilatura.
-Benchmark DomDistiller is still measured as an independent library, although
-the application workers no longer execute it.
+Benchmark DomDistiller is measured as an independent library. Application
+workers also run it independently when requested; it is not a Trafilatura fallback.
 
 The lxml-only policy is a behavior choice, not a universal quality improvement:
 non-FAST WCXB F1 is 79.56922%, versus 81.17181% in the older configuration that
@@ -115,11 +115,35 @@ Go/Rust differences are `metadata.title` on
 `legonews/golf.de-augusta.html`. Untimed replays verify those exact fields.
 All standalone metadata scores and source-specific breakdowns remain in the JSON.
 
+### Standalone Worker Correction
+
+The initial application-worker integration mistakenly disabled standalone
+DomDistiller. **Both goHTML and rustHTML must run DomDistiller when requested.**
+The corrected workers honor `RunDistiller`, `SkipPagination` and `Verbose`, keep
+standalone Mozilla unchanged, and always call Trafilatura FAST with no supplied
+candidates. Only Trafilatura's fallback pipeline excludes DomDistiller.
+
+[worker_correction_2026_09_29.json](worker_correction_2026_09_29.json) verifies all
+6,554 saved inputs: complete Go/Rust outputs match, each standalone DomDistiller
+result equals its frozen pre-removal native worker, and every other response
+section is unchanged. DomDistiller returns nonempty text on 6,169 inputs in each
+language. Trafilatura-only and combined results match in both languages.
+
+All twelve deployment binaries were rebuilt. Windows/Linux amd64 each pass five
+protocol tests, including 215 complete file and 219 TCP response comparisons and
+a positive standalone extraction/pagination test. ARM64/macOS remain build-only.
+The correction JSON retains artifact/source hashes and full-report hashes; the
+earlier validation record is preserved as evidence of the prior, incorrect
+worker integration, not the current deployment. Library benchmark adapters
+already ran standalone DomDistiller, so their measurements are unchanged.
+
 ### Current Fallback Rates
 
 The separate **6,554-page unannotated application corpus** is not pooled with
 the annotated benchmark. Counts describe the final returned source, including
 failures in the denominator; calls or temporary selections are not the rate.
+These rates concern Trafilatura only, not separately requested standalone
+DomDistiller or Mozilla extraction. The restoration leaves Trafilatura unchanged.
 
 | Final Content Source | Production FAST | Go Non-FAST Library | Rust Non-FAST Library |
 | --- | ---: | ---: | ---: |
