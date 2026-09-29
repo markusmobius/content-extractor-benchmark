@@ -111,7 +111,7 @@ def run_split(arguments):
         "benchmark": {"input_sha256": input_digest(records), "registry_sha256": manifest["registry_sha256"], "corpora": manifest["corpora"]},
         "selection": {"pages": len(records), "seed": arguments.seed, "limit_per_corpus": arguments.limit_per_corpus, "split": "dev"},
         "timing_scope": {
-            "parse": "Native wall time for in-memory charset decoding and one shared HTML parse, after the entire file read has completed.",
+            "parse": "Native wall time for in-memory charset decoding, default shared HTML input and a separate scripting-disabled Trafilatura tree when noscript is present, including all parser cleanup; file reads are excluded.",
             "extraction": "Native wall time for one engine including required working copies/conversions, extraction, native metadata and plain-text rendering. Rust drops temporary article trees before its timer stops; Go uses normal garbage collection, not forced per-call collection.",
             "trafilatura_fallback": {scraper["name"]: scraper["options"].get("trafilatura_fallback_mode", "disabled") for scraper in scrapers},
             "excluded": "File opening/reading, worker startup, request decoding, IPC, response JSON serialization, controller validation and quality scoring.",

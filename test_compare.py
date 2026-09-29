@@ -40,7 +40,7 @@ class ComparisonTests(unittest.TestCase):
                 with self.subTest(mode=mode):
                     worker["options"] = {"trafilatura_fallback": mode == "lxml", "trafilatura_fallback_mode": mode,
                                          "comments": False, "pagination": False}
-                    features = ["benchmark-shared-input"] + (["benchmark-lxml-fallback"] if mode == "lxml" else [])
+                    features = ["benchmark-shared-input", "benchmark-trafilatura-parser"] + (["benchmark-lxml-fallback"] if mode == "lxml" else [])
                     receipt["cargo_metadata"]["resolve"]["nodes"][0]["features"] = features
                     receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
                     with patch("tools.build_split_suite.load_scrapers", return_value=[worker]), \
@@ -49,7 +49,7 @@ class ComparisonTests(unittest.TestCase):
                         self.assertEqual(rust_worker(Path("config.json"), "candidate", mode)["options"], worker["options"])
                         with self.assertRaisesRegex(ValueError, "fallback mode differs"):
                             rust_worker(Path("config.json"), "candidate", "disabled" if mode == "lxml" else "lxml")
-                        for invalid in (features + ["lab-profile"], ["benchmark-shared-input"] if mode == "lxml" else features + ["benchmark-lxml-fallback"]):
+                        for invalid in (features + ["lab-profile"], [feature for feature in features if feature != "benchmark-trafilatura-parser"], ["benchmark-shared-input"] if mode == "lxml" else features + ["benchmark-lxml-fallback"]):
                             receipt["cargo_metadata"]["resolve"]["nodes"][0]["features"] = invalid
                             receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
                             with self.assertRaisesRegex(ValueError, "compiled features differ"):
@@ -260,6 +260,7 @@ class ComparisonTests(unittest.TestCase):
             ("go-trafilatura-2.0.0", "v2.0.0"),
             ("go-trafilatura-2.2.2", "v2.2.2"),
             ("go-trafilatura-2.2.5", "v2.2.5"),
+            ("go-trafilatura-2.2.6", "v2.2.6"),
             ("go-domdistiller-1.0.0", "v1.0.0"),
             ("go-readabilityV2-0.6.0", "v0.6.0"),
             ("rust-trafilatura-2.2.2", "v2.2.2"),

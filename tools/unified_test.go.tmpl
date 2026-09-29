@@ -35,6 +35,7 @@ func TestSharedInputAllEngineOrders(test *testing.T) {
 		"<html lang='en'><title>Shared article</title><meta name='author' content='A Writer'><article><h1>Shared article</h1><p>" + strings.Repeat("An article with details, evidence, and useful context. ", 40) + "</p></article></html>",
 		"<title>Short</title><svg><title>Image</title></svg><template><p>Hidden</p></template><article><p>Short article <b>one<i>two</b>three</article>",
 		"<meta charset='windows-1252'><title>Article</title><article><p>" + strings.Repeat("The caf\xe9 published a detailed report, including context. ", 40) + "</p></article>",
+		"<title>Reading room</title><article><p>" + strings.Repeat("The library opened a reading room with books and public services. ", 20) + "</p><noscript><img src='/room.jpg' width='800' height='600'></noscript></article>",
 	}
 	orders := [][]string{
 		{"readability", "domdistiller", "trafilatura"}, {"readability", "trafilatura", "domdistiller"},
@@ -42,10 +43,21 @@ func TestSharedInputAllEngineOrders(test *testing.T) {
 		{"trafilatura", "readability", "domdistiller"}, {"trafilatura", "domdistiller", "readability"},
 	}
 	for _, source := range sources {
-		document, err := dom.Parse(strings.NewReader(source))
+		document, trafilaturaDocument, err := parseInputs([]byte(source))
 		if err != nil {
 			test.Fatal(err)
 		}
+		previous, err := dom.Parse(strings.NewReader(source))
+		if err != nil {
+			test.Fatal(err)
+		}
+		if dom.OuterHTML(document) != dom.OuterHTML(previous) {
+			test.Fatal("default parser or reader decoding changed")
+		}
+		if strings.Contains(source, "<noscript>") && document == trafilaturaDocument {
+			test.Fatal("noscript requires a separate Trafilatura input")
+		}
+		trafilaturaOriginal := dom.OuterHTML(trafilaturaDocument)
 		var original bytes.Buffer
 		if err := html.Render(&original, document); err != nil {
 			test.Fatal(err)
@@ -53,7 +65,11 @@ func TestSharedInputAllEngineOrders(test *testing.T) {
 		reference := make(map[string]prediction)
 		for repeat, order := range orders {
 			for _, engine := range order {
-				output := extractShared(document, "https://example.org/article", engine)
+				inputDocument := document
+				if engine == "trafilatura" {
+					inputDocument = trafilaturaDocument
+				}
+				output := extractShared(inputDocument, "https://example.org/article", engine)
 				if repeat == 0 {
 					reference[engine] = output
 				} else if !reflect.DeepEqual(output, reference[engine]) {
@@ -65,6 +81,9 @@ func TestSharedInputAllEngineOrders(test *testing.T) {
 				}
 				if after.String() != original.String() {
 					test.Fatalf("%s mutated shared input", engine)
+				}
+				if dom.OuterHTML(trafilaturaDocument) != trafilaturaOriginal {
+					test.Fatalf("%s mutated Trafilatura input", engine)
 				}
 			}
 		}

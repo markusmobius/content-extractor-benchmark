@@ -16,11 +16,11 @@ from prepare import sha256, write_json
 from tools.build_releases import RUNTIME, build_go, load_suite, snapshot
 
 
-GO_RELEASES = ("go-readabilityV2-0.6.0", "go-domdistiller-1.0.0", "go-trafilatura-2.2.5")
+GO_RELEASES = ("go-readabilityV2-0.6.0", "go-domdistiller-1.0.0", "go-trafilatura-2.2.6")
 RUST_RELEASES = {
-    "rust-readability-v2": {"version": "0.6.4", "repository": "rust-readability", "commit": "79d5b8ac6bfe54a79270a887ea11464ca9aed5d5"},
+    "rust-readability-v2": {"version": "0.6.5", "repository": "rust-readability", "commit": "fb314e7b3f9a363c9852c3dda200f391ef2f98f0"},
     "rust-domdistiller": {"version": "1.0.1", "repository": "rust-domdistiller", "commit": "e95bff0cea7f7b9639abe04a8531b220b3ee4a6e"},
-    "rust-trafilatura": {"version": "2.2.5", "repository": "rust-trafilatura", "commit": "995ec38a4fc1fb98ab5893f6e186062477ab5c15"},
+    "rust-trafilatura": {"version": "2.2.6", "repository": "rust-trafilatura", "commit": "8c002162bb2ba9b2703e13144bfafb2cb35c3452"},
 }
 
 
@@ -70,7 +70,8 @@ def rust_worker(config, name, fallback_mode="disabled"):
         raise ValueError("Rust worker fallback mode differs from the requested Go/Rust suite")
     resolved = receipt["cargo_metadata"]["resolve"]
     features = next(node["features"] for node in resolved["nodes"] if node["id"] == resolved["root"])
-    if ("benchmark-lxml-fallback" in features) != (fallback_mode == "lxml") or "lab-profile" in features:
+    if (("benchmark-lxml-fallback" in features) != (fallback_mode == "lxml")
+            or "benchmark-trafilatura-parser" not in features or "lab-profile" in features):
         raise ValueError("Rust compiled features differ from the requested uninstrumented fallback mode")
     return {**{key: worker[key] for key in ("version", "profile", "options", "command", "cwd", "env")},
             "name": "rust", "artifacts": list(worker["artifacts_sha256"])}
@@ -114,7 +115,7 @@ def build(arguments):
                "engine_releases": engines, **build, "binary_sha256": sha256(binary),
                "test_adapter_sha256": sha256(test_adapter), "validation_commands": checks,
                "builder_sha256": sha256(Path(__file__)), "shared_builder_sha256": sha256(ROOT / "tools" / "build_releases.py"),
-               "dependency_profile": "All three engines use the unchanged Go-Trafilatura v2.2.5 module graph; DomDistiller's pseudo-version resolves to the v1.0.0 release commit."}
+               "dependency_profile": "All three engines use the unchanged Go-Trafilatura v2.2.6 module graph; DomDistiller's pseudo-version resolves to the v1.0.0 release commit."}
     print("Writing verified Go/Rust suite receipts", flush=True)
     write_json(directory / "build.json", receipt)
     go = {"name": "go", "version": "; ".join(f"{name}={version}" for name, version in sorted(versions.items())),
@@ -122,7 +123,7 @@ def build(arguments):
           "artifacts": [str(directory / "build.json"), str(adapter), str(test_adapter)],
           "options": {"engines": versions, "trafilatura_fallback": arguments.trafilatura_fallback == "lxml", "trafilatura_fallback_mode": arguments.trafilatura_fallback, "comments": False, "tables": True,
                       "pagination": False, "metadata": "native-only", "naive_date_timezone": "UTC",
-                      "decode": "go-shiori/dom.Parse", "parser": "golang.org/x/net/html-single-shared-input",
+                      "decode": "go-shiori/dom.Parse-equivalent", "parser": "golang.org/x/net/html-default-plus-isolated-noscript",
                       "garbage_collection": "GOGC=100; no forced per-call collection"}}
     write_json(arguments.output / "compare.json", {"schema_version": 1, "scrapers": [go, rust]})
     print(f"Ready: {arguments.output / 'compare.json'}", flush=True)

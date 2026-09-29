@@ -11,10 +11,16 @@ import (
 	"time"
 
 	"github.com/go-shiori/dom"
+	"github.com/gogs/chardet"
 	distiller "github.com/markusmobius/go-domdistiller"
 	readability "github.com/markusmobius/go-readabilityV2"
 	trafilatura "github.com/markusmobius/go-trafilatura/v2"
 	"golang.org/x/net/html"
+	"golang.org/x/net/html/charset"
+	xunicode "golang.org/x/text/encoding/unicode"
+	"golang.org/x/text/runes"
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
 )
 
 const enableTrafilaturaFallback = __TRAFILATURA_FALLBACK__
@@ -129,6 +135,33 @@ func extractShared(document *html.Node, pageURL, engine string) prediction {
 	}
 }
 
+func parseInputs(content []byte) (*html.Node, *html.Node, error) {
+	detected, err := chardet.NewHtmlDetector().DetectBest(content)
+	if err != nil {
+		return nil, nil, err
+	}
+	encoding, _ := charset.Lookup(detected.Charset)
+	if encoding == nil {
+		encoding = xunicode.UTF8
+	}
+	decoded := transform.NewReader(bytes.NewReader(content), encoding.NewDecoder())
+	normalized := transform.NewReader(decoded, transform.Chain(norm.NFD,
+		runes.Remove(runes.Predicate(func(character rune) bool { return character == '\u00ad' })), norm.NFC))
+	source, err := io.ReadAll(normalized)
+	if err != nil {
+		return nil, nil, err
+	}
+	document, err := html.Parse(bytes.NewReader(source))
+	if err != nil {
+		return nil, nil, err
+	}
+	trafilaturaDocument := document
+	if len(dom.GetElementsByTagName(document, "noscript")) != 0 {
+		trafilaturaDocument, err = html.ParseWithOptions(bytes.NewReader(source), html.ParseOptionEnableScripting(false))
+	}
+	return document, trafilaturaDocument, err
+}
+
 func process(input request) response {
 	output := response{ID: input.ID, EngineOrder: input.EngineOrder,
 		Seconds: make(map[string]float64, 4), Predictions: make(map[string]prediction, 3)}
@@ -138,15 +171,19 @@ func process(input request) response {
 		return output
 	}
 	started := time.Now()
-	document, err := dom.Parse(bytes.NewReader(content))
+	document, trafilaturaDocument, err := parseInputs(content)
 	output.Seconds["parse"] = time.Since(started).Seconds()
 	if err != nil {
 		output.Error = err.Error()
 		return output
 	}
 	for _, engine := range input.EngineOrder {
+		inputDocument := document
+		if engine == "trafilatura" {
+			inputDocument = trafilaturaDocument
+		}
 		started := time.Now()
-		result := extractShared(document, input.URL, engine)
+		result := extractShared(inputDocument, input.URL, engine)
 		output.Seconds[engine] = time.Since(started).Seconds()
 		output.Predictions[engine] = result
 	}

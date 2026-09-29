@@ -76,10 +76,12 @@ def build(arguments):
         manifest = manifest_path.read_text(encoding="utf-8")
         parsed_manifest = tomllib.loads(manifest)
         worker_cargo = [*cargo, *(source_configuration(parsed_manifest, directory) if label == "candidate" and reference is None else [])]
-        manifest_path.write_text(manifest.replace("[features]\n", "[features]\nbenchmark-shared-input = []\nbenchmark-lxml-fallback = []\n", 1), encoding="utf-8")
+        manifest_path.write_text(manifest.replace("[features]\n", '[features]\nbenchmark-shared-input = []\nbenchmark-lxml-fallback = []\nbenchmark-trafilatura-parser = ["benchmark-shared-input"]\n', 1), encoding="utf-8")
         target = arguments.target_dir.resolve() if arguments.target_dir else arguments.output / "target"
         command = [*worker_cargo, "build", *(["--locked"] if reference is not None else []), *(["--offline"] if arguments.offline else []), "--release", "--example", "benchmark_split", "--manifest-path", str(manifest_path), "--target-dir", str(target)]
         features = ["benchmark-shared-input"] if label == "candidate" else []
+        if label == "candidate" and parsed_manifest["package"]["version"] == "2.2.6":
+            features.append("benchmark-trafilatura-parser")
         if arguments.trafilatura_fallback == "lxml":
             features.append("benchmark-lxml-fallback")
         if features:
@@ -96,7 +98,7 @@ def build(arguments):
                 if relative not in ("Cargo.toml", "Cargo.lock") and sha256(directory / name / relative) != expected:
                     raise ValueError(f"Build modified library source: {name}/{relative}")
         write_json(directory / "build.json", receipt)
-        scrapers.append({"name": label, "version": "; ".join(f"{name}={version}" for name, version in sorted(versions.items())), "profile": "shared-DOM/native-split", "options": {"engines": versions, "trafilatura_fallback": arguments.trafilatura_fallback == "lxml", "trafilatura_fallback_mode": arguments.trafilatura_fallback, "comments": False, "pagination": False, "allocator": "mimalloc", "decode": "native-trafilatura-reader", "parser": "readability-html5-single-shared-input"}, "command": [str(binary)], "cwd": ".", "env": {"TZ": "UTC"}, "artifacts": [str(directory / "build.json"), str(adapter)]})
+        scrapers.append({"name": label, "version": "; ".join(f"{name}={version}" for name, version in sorted(versions.items())), "profile": "shared-DOM/native-split", "options": {"engines": versions, "trafilatura_fallback": arguments.trafilatura_fallback == "lxml", "trafilatura_fallback_mode": arguments.trafilatura_fallback, "comments": False, "pagination": False, "allocator": "mimalloc", "decode": "native-trafilatura-reader", "parser": "readability-html5-default-plus-isolated-noscript" if "benchmark-trafilatura-parser" in features else "readability-html5-single-shared-input"}, "command": [str(binary)], "cwd": ".", "env": {"TZ": "UTC"}, "artifacts": [str(directory / "build.json"), str(adapter)]})
     write_json(arguments.output / "compare.json", {"schema_version": 1, "scrapers": scrapers})
     print(f"Ready: {arguments.output / 'compare.json'}", flush=True)
 

@@ -29,6 +29,15 @@
       "module": "github.com/markusmobius/go-trafilatura/v2"
     },
     {
+      "name": "go-trafilatura-2.2.6",
+      "language": "go",
+      "engine": "trafilatura",
+      "repository": "https://github.com/markusmobius/go-trafilatura",
+      "tag": "v2.2.6",
+      "commit": "a3d4a68e0d50346b32b4f89f0a9573a06258d301",
+      "module": "github.com/markusmobius/go-trafilatura/v2"
+    },
+    {
       "name": "go-domdistiller-1.0.0",
       "language": "go",
       "engine": "domdistiller",
