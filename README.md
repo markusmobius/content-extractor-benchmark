@@ -41,7 +41,7 @@ Holdout use is specific to an experiment, not a permanent property of a filename
 
 ## Results: 2026-09-29
 
-The released **Go/Rust Trafilatura 2.2.6** suites use **Rust-Readability 0.6.5**,
+The measured **Go/Rust Trafilatura 2.2.6** suites use **Rust-Readability 0.6.5**,
 Go-ReadabilityV2 0.6.0 and DomDistiller 1.0.0/1.0.1. Standalone Readability remains
 Mozilla. Trafilatura permits only bundled readability-lxml in non-FAST mode;
 Mozilla, DomDistiller and supplied/custom fallback candidates are not used.
@@ -56,23 +56,30 @@ limits. Each mode ran the same 2,659 saved development pages: 983 LegoNews,
 181 ScrapingHub and 1,495 WCXB. The three F1 scores use different rules and are
 not averaged. Errors below are in that corpus order and remain in denominators.
 
-### Current Text Quality And Timing
+### Current Quality and Speed
 
-| Implementation | Trafilatura Mode | LegoNews F1 | ScrapingHub F1 | WCXB F1 | Errors | Parse ms/page | Extraction ms/page |
-| --- | --- | ---: | ---: | ---: | --- | ---: | ---: |
-| go-readabilityV2-0.6.0 | FAST suite | 87.82711% | 95.20557% | 78.47603% | 7 / 0 / 28 | 11.283 | 4.755 |
-| rust-readability-0.6.5 | FAST suite | 87.82711% | 95.20557% | 78.47603% | 7 / 0 / 28 | 6.386 | 3.945 |
-| go-domdistiller-1.0.0 | FAST suite | 86.74080% | 92.74280% | 74.39696% | 0 / 0 / 0 | 11.283 | 6.159 |
-| rust-domdistiller-1.0.1 | FAST suite | 86.74080% | 92.74280% | 74.39696% | 0 / 0 / 0 | 6.386 | 3.400 |
-| go-trafilatura-2.2.6 | FAST | 90.91534% | 96.15663% | 78.51703% | 4 / 0 / 10 | 11.283 | 11.329 |
-| rust-trafilatura-2.2.6 | FAST | 90.91534% | 96.15663% | 78.51703% | 4 / 0 / 10 | 6.386 | 6.570 |
-| go-trafilatura-2.2.6 | Non-FAST lxml | 91.13924% | 95.98168% | 79.56922% | 4 / 0 / 9 | 11.518 | 24.745 |
-| rust-trafilatura-2.2.6 | Non-FAST lxml | 91.13924% | 95.98168% | 79.56922% | 4 / 0 / 9 | 6.545 | 10.910 |
+| Extractor | Go Version | Rust Version | Go ms/page | Rust ms/page | Go/Rust |
+| --- | --- | --- | ---: | ---: | ---: |
+| Readability | 0.6.0 | 0.6.5 | 4.755 | 3.945 | 1.21x |
+| DomDistiller | 1.0.0 | 1.0.1 | 6.159 | 3.400 | 1.81x |
+| Trafilatura FAST | 2.2.6 | 2.2.6 | 11.329 | 6.570 | 1.72x |
+
+Parsing is separate: **Go 11.283 / Rust 6.386 ms/page**, charged once per
+language/page for the shared suite. The rows name the actual measured versions.
+Later documentation-only patches with identical runtime source and dependency
+pins do not replace those labels or introduce new measurements.
+
+Both languages have these text scores; matching text scores do not imply equal
+HTML or metadata. Known metadata differences are listed below.
+
+| Extractor | LegoNews F1 | ScrapingHub F1 | WCXB F1 | Errors |
+| --- | ---: | ---: | ---: | --- |
+| Readability | 87.82711% | 95.20557% | 78.47603% | 7 / 0 / 28 |
+| DomDistiller | 86.74080% | 92.74280% | 74.39696% | 0 / 0 / 0 |
+| Trafilatura FAST | 90.91534% | 96.15663% | 78.51703% | 4 / 0 / 10 |
 
 All means retain **all four measured passes after one complete warmup**:
 10,636 observations per engine per mode. No best-pass selection or trimming.
-Within the FAST run, Go/Rust extraction ratios are 1.21x Readability, 1.81x
-DomDistiller and **1.72x Trafilatura**. Non-FAST Trafilatura is **2.27x**.
 These are paired language-suite ratios, not old/new release speedups or a
 2x application-worker improvement. Absolute timings from separate runs are not
 pooled or used to isolate fallback cost.
@@ -92,6 +99,20 @@ are excluded; Go GC work may cross stage boundaries. Comments and pagination are
 off, tables are on, and no extracted candidates are supplied to Trafilatura.
 Benchmark DomDistiller is measured as an independent library. Application
 workers also run it independently when requested; it is not a Trafilatura fallback.
+
+### Non-FAST Trafilatura
+
+This is a separate run on the same 2,659 pages, with one warmup and all four
+measured passes retained. Its values must not be pooled with the FAST run.
+
+| Extractor | Go Version | Rust Version | Go ms/page | Rust ms/page | Go/Rust |
+| --- | --- | --- | ---: | ---: | ---: |
+| Trafilatura non-FAST | 2.2.6 | 2.2.6 | 24.745 | 10.910 | 2.27x |
+
+Parsing is separate: **Go 11.518 / Rust 6.545 ms/page**. Both languages score
+**91.13924% / 95.98168% / 79.56922%** F1 on LegoNews / ScrapingHub / WCXB,
+with **4 / 0 / 9** errors retained in the denominators. Full results are in the
+[non-FAST report](go_rust_lxml_performance_2026_09_29.json).
 
 The lxml-only policy is a behavior choice, not a universal quality improvement:
 non-FAST WCXB F1 is 79.56922%, versus 81.17181% in the older configuration that
@@ -177,7 +198,8 @@ separate all-flags date trial are not counted as successful comparisons or fixed
 here. Finite corpus agreement is not complete Python parity or accuracy.
 Published crates/module archives were checked against tagged runtime bytes and
 public checksums. Crate archives retain their immutable release-time README;
-fresh measurement tables are repository and GitHub release-note follow-ups.
+updated crate documentation requires a new version, not a release-body edit.
+The shared documentation and release contract is in [AGENTS.md](AGENTS.md).
 
 ## Historical Results: 2026-09-28
 
